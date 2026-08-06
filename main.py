@@ -6,7 +6,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 # ===== CONFIG =====
-CSV_URL = "https://affiliate.shopee.com.br/api/v1/datafeed/download?id=YWJjZGVmZ2hpamtsbW5vcFMjz35zY_7hscVJ_4QLIFiIR3DQ9hsrLcX6rgIVVFkb"
+CSV_URL = os.environ["SHOPEE_FEED_URL"]
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
