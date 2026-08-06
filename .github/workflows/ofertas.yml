@@ -28,5 +28,6 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SHOPEE_FEED_URL: ${{ secrets.SHOPEE_FEED_URL }}
         run: |
           python main.py
