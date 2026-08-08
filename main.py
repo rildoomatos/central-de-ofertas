@@ -48,18 +48,12 @@ def gerar_legenda(produto):
     preco_atual = moeda(produto["sale_price"])
     preco_antigo = moeda(produto["price"])
 
-    try:
-        desconto = int(float(produto["discount_percentage"]))
-    except:
-        desconto = produto["discount_percentage"]
+    desconto = int(float(produto["discount_percentage"]))
 
-    try:
-        avaliacao = float(produto["item_rating"])
-        avaliacao = f"{avaliacao:.1f}".replace(".", ",")
-    except:
-        avaliacao = produto["item_rating"]
+    avaliacao = float(produto["item_rating"])
+    avaliacao = f"{avaliacao:.1f}".replace(".", ",")
 
-    legenda = (
+    return (
         "🔥 *OFERTA NA SHOPEE!*\n\n"
         f"🛍️ {titulo}\n\n"
         f"❌ De: {preco_antigo}\n"
@@ -71,13 +65,10 @@ def gerar_legenda(produto):
         "⚠️ Preço e disponibilidade podem mudar a qualquer momento!"
     )
 
-    return legenda
 
-
-# ===== ATUALIZAR LEGENDAS COM LINK DE AFILIADO =====
+# ===== ATUALIZAR LINKS DE AFILIADO =====
 
 dados_planilha = aba.get_all_values()
-
 atualizacoes = []
 
 for numero_linha, linha in enumerate(dados_planilha[1:], start=2):
@@ -91,13 +82,10 @@ for numero_linha, linha in enumerate(dados_planilha[1:], start=2):
 
     if link_afiliado and status != "PRONTO":
 
-        if "[COLE O LINK DE AFILIADO]" in legenda:
-            legenda_final = legenda.replace(
-                "[COLE O LINK DE AFILIADO]",
-                link_afiliado
-            )
-        else:
-            legenda_final = legenda
+        legenda_final = legenda.replace(
+            "[COLE O LINK DE AFILIADO]",
+            link_afiliado
+        )
 
         atualizacoes.append({
             "range": f"L{numero_linha}:M{numero_linha}",
@@ -126,30 +114,99 @@ with open(arquivo, "wb") as f:
 
 df = pd.read_csv(arquivo)
 
+df["item_rating"] = pd.to_numeric(
+    df["item_rating"],
+    errors="coerce"
+)
+
+df["discount_percentage"] = pd.to_numeric(
+    df["discount_percentage"],
+    errors="coerce"
+)
+
+
+# ===== CRIAR / ATUALIZAR ABA CONFIG =====
+
+try:
+    config = planilha.worksheet("CONFIG")
+
+except gspread.WorksheetNotFound:
+
+    config = planilha.add_worksheet(
+        title="CONFIG",
+        rows=200,
+        cols=2
+    )
+
+    config.update(
+        range_name="A1:B2",
+        values=[
+            ["CONFIGURAÇÃO", "VALOR"],
+            ["Categoria", "TODAS"]
+        ]
+    )
+
+
+categorias = sorted(
+    df["global_category1"]
+    .dropna()
+    .astype(str)
+    .unique()
+)
+
+config.update(
+    range_name="A4:A4",
+    values=[["CATEGORIAS DISPONÍVEIS"]]
+)
+
+if categorias:
+    config.update(
+        range_name=f"A5:A{4 + len(categorias)}",
+        values=[[categoria] for categoria in categorias]
+    )
+
+
+# ===== CATEGORIA ESCOLHIDA =====
+
+categoria_escolhida = config.acell("B2").value
+
+if not categoria_escolhida:
+    categoria_escolhida = "TODAS"
+
+categoria_escolhida = categoria_escolhida.strip()
+
 
 # ===== FILTROS =====
 
 df = df[df["item_rating"] >= 4.8]
-df = df[df["discount_percentage"] >= 10]
 
-df = df.drop_duplicates(subset=["itemid"])
+df = df[
+    df["discount_percentage"] >= 10
+]
 
-
-# ===== ORDENAR MELHORES OFERTAS =====
-
-df = df.sort_values(
-    by=["discount_percentage", "item_rating"],
-    ascending=[False, False]
+df = df.drop_duplicates(
+    subset=["itemid"]
 )
+
+
+# ===== FILTRAR CATEGORIA =====
+
+if categoria_escolhida.upper() != "TODAS":
+
+    df = df[
+        df["global_category1"]
+        .astype(str)
+        .str.lower()
+        ==
+        categoria_escolhida.lower()
+    ]
 
 
 # ===== EXCLUIR PRODUTOS JÁ EXISTENTES =====
 
-ids_existentes = aba.col_values(1)
-
 ids_existentes = set(
     str(x).strip()
-    for x in ids_existentes
+    for x in aba.col_values(1)
 )
 
 df["itemid"] = df["itemid"].astype(str)
@@ -159,7 +216,26 @@ df = df[
 ]
 
 
-# ===== ENVIAR NOVAS OFERTAS PARA PLANILHA =====
+# ===== ORDENAR MELHORES OFERTAS =====
+
+df = df.sort_values(
+    by=[
+        "discount_percentage",
+        "item_rating"
+    ],
+    ascending=[
+        False,
+        False
+    ]
+)
+
+
+# ===== SOMENTE AS 5 MELHORES =====
+
+df = df.head(5)
+
+
+# ===== ENVIAR PARA PLANILHA =====
 
 linhas = []
 
@@ -168,23 +244,24 @@ for _, produto in df.iterrows():
     legenda = gerar_legenda(produto)
 
     linhas.append([
-        produto["itemid"],                 # ID
-        "Shopee",                          # Marketplace
-        produto["title"],                  # Produto
-        produto["sale_price"],             # Preço Atual
-        produto["price"],                  # Preço Anterior
-        produto["discount_percentage"],    # Desconto
-        produto["item_rating"],            # Avaliação
-        "",                                # Vendas
-        "",                                # Categoria
-        produto["product_link"],           # Link Original
-        "",                                # Link Afiliado
-        legenda,                           # Legenda
-        "AGUARDANDO LINK",                 # Status
+        produto["itemid"],
+        "Shopee",
+        produto["title"],
+        produto["sale_price"],
+        produto["price"],
+        produto["discount_percentage"],
+        produto["item_rating"],
+        "",
+        produto["global_category1"],
+        produto["product_link"],
+        "",
+        legenda,
+        "AGUARDANDO LINK",
         pd.Timestamp.now().strftime(
             "%d/%m/%Y %H:%M"
         )
     ])
+
 
 if linhas:
     aba.append_rows(
@@ -192,5 +269,15 @@ if linhas:
         value_input_option="USER_ENTERED"
     )
 
-print(f"{len(linhas)} novas ofertas enviadas.")
-print(f"{len(atualizacoes)} ofertas ficaram PRONTAS.")
+
+print(
+    f"Categoria: {categoria_escolhida}"
+)
+
+print(
+    f"{len(linhas)} ofertas selecionadas."
+)
+
+print(
+    f"{len(atualizacoes)} ofertas ficaram PRONTAS."
+)
