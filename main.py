@@ -70,14 +70,20 @@ linhas = []
 
 for _, produto in df.iterrows():
     linhas.append([
-        produto["itemid"],
-        produto["title"],
-        produto["price"],
-        produto["sale_price"],
-        produto["discount_percentage"],
-        produto["item_rating"],
-        produto["product_link"],
-        produto["image_link"]
+        produto["itemid"],                 # ID
+        "Shopee",                          # Marketplace
+        produto["title"],                  # Produto
+        produto["sale_price"],             # Preço Atual
+        produto["price"],                  # Preço Anterior
+        produto["discount_percentage"],    # Desconto
+        produto["item_rating"],            # Avaliação
+        "",                                # Vendas
+        "",                                # Categoria
+        produto["product_link"],           # Link Original
+        "",                                # Link Afiliado
+        "",                                # Legenda
+        "NOVA OFERTA",                     # Status
+        pd.Timestamp.now().strftime("%d/%m/%Y %H:%M")  # Data
     ])
 
 if linhas:
