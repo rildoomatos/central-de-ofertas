@@ -42,6 +42,14 @@ df = df[df["item_rating"] >= 4.8]
 df = df[df["discount_percentage"] >= 10]
 
 df = df.drop_duplicates(subset=["itemid"])
+# ===== EXCLUIR PRODUTOS JÁ EXISTENTES NA PLANILHA =====
+ids_existentes = aba.col_values(1)
+
+ids_existentes = set(str(x).strip() for x in ids_existentes)
+
+df["itemid"] = df["itemid"].astype(str)
+
+df = df[~df["itemid"].isin(ids_existentes)]
 
 # ===== ENVIAR PARA PLANILHA =====
 linhas = []
