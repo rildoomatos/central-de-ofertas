@@ -46,6 +46,8 @@ df = df.drop_duplicates(subset=["itemid"])
 # ===== ENVIAR PARA PLANILHA =====
 for _, produto in df.iterrows():
 
+for _, produto in df.iterrows():
+
     aba.append_row([
         produto["itemid"],
         produto["title"],
