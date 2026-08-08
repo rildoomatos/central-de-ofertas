@@ -26,6 +26,48 @@ gc = gspread.authorize(credentials)
 planilha = gc.open_by_key(os.environ["GOOGLE_SHEET_ID"])
 aba = planilha.worksheet("OFERTAS")
 
+# ===== FUNÇÕES =====
+
+def moeda(valor):
+    try:
+        valor = float(valor)
+        return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        return str(valor)
+
+
+def gerar_legenda(produto):
+
+    titulo = str(produto["title"])
+    preco_atual = moeda(produto["sale_price"])
+    preco_antigo = moeda(produto["price"])
+
+    try:
+        desconto = int(float(produto["discount_percentage"]))
+    except:
+        desconto = produto["discount_percentage"]
+
+    try:
+        avaliacao = float(produto["item_rating"])
+        avaliacao = f"{avaliacao:.1f}".replace(".", ",")
+    except:
+        avaliacao = produto["item_rating"]
+
+    legenda = (
+        "🔥 *OFERTA NA SHOPEE!*\n\n"
+        f"🛍️ {titulo}\n\n"
+        f"❌ De: {preco_antigo}\n"
+        f"✅ Por: *{preco_atual}*\n"
+        f"🔥 {desconto}% OFF\n"
+        f"⭐ Avaliação: {avaliacao}\n\n"
+        "🛒 *Compre aqui:*\n"
+        "[COLE O LINK DE AFILIADO]\n\n"
+        "⚠️ Preço e disponibilidade podem mudar a qualquer momento!"
+    )
+
+    return legenda
+
+
 # ===== BAIXAR CSV =====
 
 arquivo = "feed.csv"
@@ -54,21 +96,29 @@ df = df.sort_values(
     ascending=[False, False]
 )
 
-# ===== EXCLUIR PRODUTOS JÁ EXISTENTES NA PLANILHA =====
+# ===== EXCLUIR PRODUTOS JÁ EXISTENTES =====
 
 ids_existentes = aba.col_values(1)
 
-ids_existentes = set(str(x).strip() for x in ids_existentes)
+ids_existentes = set(
+    str(x).strip()
+    for x in ids_existentes
+)
 
 df["itemid"] = df["itemid"].astype(str)
 
-df = df[~df["itemid"].isin(ids_existentes)]
+df = df[
+    ~df["itemid"].isin(ids_existentes)
+]
 
 # ===== ENVIAR PARA PLANILHA =====
 
 linhas = []
 
 for _, produto in df.iterrows():
+
+    legenda = gerar_legenda(produto)
+
     linhas.append([
         produto["itemid"],                 # ID
         "Shopee",                          # Marketplace
@@ -81,9 +131,11 @@ for _, produto in df.iterrows():
         "",                                # Categoria
         produto["product_link"],           # Link Original
         "",                                # Link Afiliado
-        "",                                # Legenda
-        "NOVA OFERTA",                     # Status
-        pd.Timestamp.now().strftime("%d/%m/%Y %H:%M")  # Data
+        legenda,                           # Legenda
+        "AGUARDANDO LINK",                 # Status
+        pd.Timestamp.now().strftime(
+            "%d/%m/%Y %H:%M"
+        )
     ])
 
 if linhas:
