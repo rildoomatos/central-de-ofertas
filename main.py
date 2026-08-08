@@ -5,8 +5,6 @@ import requests
 import gspread
 from google.oauth2.service_account import Credentials
 
-# ===== CONFIG =====
-
 CSV_URL = os.environ["SHOPEE_FEED_URL"]
 
 SCOPES = [
@@ -27,8 +25,6 @@ planilha = gc.open_by_key(os.environ["GOOGLE_SHEET_ID"])
 aba = planilha.worksheet("OFERTAS")
 
 
-# ===== FUNÇÕES =====
-
 def moeda(valor):
     try:
         valor = float(valor)
@@ -42,64 +38,45 @@ def moeda(valor):
         return str(valor)
 
 
-def gerar_legenda(produto):
+def numero(valor):
+    try:
+        return round(float(str(valor).replace(",", ".")), 2)
+    except:
+        return 0
 
-    titulo = str(produto["title"])
+
+def gerar_legenda(produto, link_afiliado=""):
+
     preco_atual = moeda(produto["sale_price"])
     preco_antigo = moeda(produto["price"])
 
     desconto = int(float(produto["discount_percentage"]))
 
-    avaliacao = float(produto["item_rating"])
-    avaliacao = f"{avaliacao:.1f}".replace(".", ",")
+    avaliacao = (
+        f"{float(produto['item_rating']):.1f}"
+        .replace(".", ",")
+    )
+
+    link = (
+        link_afiliado
+        if link_afiliado
+        else "[COLE O LINK DE AFILIADO]"
+    )
 
     return (
         "🔥 *OFERTA NA SHOPEE!*\n\n"
-        f"🛍️ {titulo}\n\n"
+        f"🛍️ {produto['title']}\n\n"
         f"❌ De: {preco_antigo}\n"
         f"✅ Por: *{preco_atual}*\n"
         f"🔥 {desconto}% OFF\n"
         f"⭐ Avaliação: {avaliacao}\n\n"
         "🛒 *Compre aqui:*\n"
-        "[COLE O LINK DE AFILIADO]\n\n"
+        f"{link}\n\n"
         "⚠️ Preço e disponibilidade podem mudar a qualquer momento!"
     )
 
 
-# ===== ATUALIZAR LINKS DE AFILIADO =====
-
-dados_planilha = aba.get_all_values()
-atualizacoes = []
-
-for numero_linha, linha in enumerate(dados_planilha[1:], start=2):
-
-    if len(linha) < 13:
-        continue
-
-    link_afiliado = linha[10].strip()
-    legenda = linha[11]
-    status = linha[12]
-
-    if link_afiliado and status != "PRONTO":
-
-        legenda_final = legenda.replace(
-            "[COLE O LINK DE AFILIADO]",
-            link_afiliado
-        )
-
-        atualizacoes.append({
-            "range": f"L{numero_linha}:M{numero_linha}",
-            "values": [[legenda_final, "PRONTO"]]
-        })
-
-if atualizacoes:
-    aba.batch_update(
-        atualizacoes,
-        value_input_option="USER_ENTERED"
-    )
-
-
-# ===== BAIXAR CSV =====
+# ===== BAIXAR FEED =====
 
 arquivo = "feed.csv"
 
@@ -108,9 +85,6 @@ r.raise_for_status()
 
 with open(arquivo, "wb") as f:
     f.write(r.content)
-
-
-# ===== LER CSV =====
 
 df = pd.read_csv(arquivo)
 
@@ -124,8 +98,22 @@ df["discount_percentage"] = pd.to_numeric(
     errors="coerce"
 )
 
+df["sale_price"] = pd.to_numeric(
+    df["sale_price"],
+    errors="coerce"
+)
 
-# ===== CRIAR / ATUALIZAR ABA CONFIG =====
+df["price"] = pd.to_numeric(
+    df["price"],
+    errors="coerce"
+)
+
+df["itemid"] = df["itemid"].astype(str)
+
+df = df.drop_duplicates(subset=["itemid"])
+
+
+# ===== CONFIG =====
 
 try:
     config = planilha.worksheet("CONFIG")
@@ -139,86 +127,194 @@ except gspread.WorksheetNotFound:
     )
 
     config.update(
-        range_name="A1:B2",
+        range_name="A1:B3",
         values=[
             ["CONFIGURAÇÃO", "VALOR"],
-            ["Categoria", "TODAS"]
+            ["Categoria", "TODAS"],
+            ["Categoria anterior", ""]
         ]
     )
 
 
-categorias = sorted(
-    df["global_category1"]
-    .dropna()
-    .astype(str)
-    .unique()
+categoria_atual = config.acell("B2").value or "TODAS"
+categoria_atual = categoria_atual.strip()
+
+categoria_anterior = config.acell("B3").value or ""
+categoria_anterior = categoria_anterior.strip()
+
+
+# Se ainda não existe categoria anterior,
+# tenta descobrir pela planilha atual
+if not categoria_anterior:
+
+    dados_atuais = aba.get_all_values()
+
+    if len(dados_atuais) > 1 and len(dados_atuais[1]) >= 9:
+        categoria_anterior = dados_atuais[1][8].strip()
+
+
+# ===== SE TROCOU CATEGORIA, LIMPAR OFERTAS =====
+
+trocou_categoria = (
+    categoria_anterior
+    and categoria_atual.lower() != categoria_anterior.lower()
 )
 
-config.update(
-    range_name="A4:A4",
-    values=[["CATEGORIAS DISPONÍVEIS"]]
-)
+if trocou_categoria:
 
-if categorias:
-    config.update(
-        range_name=f"A5:A{4 + len(categorias)}",
-        values=[[categoria] for categoria in categorias]
+    if aba.row_count > 1:
+        aba.batch_clear([
+            f"A2:N{aba.row_count}"
+        ])
+
+    print(
+        f"Categoria alterada: "
+        f"{categoria_anterior} → {categoria_atual}"
     )
 
 
-# ===== CATEGORIA ESCOLHIDA =====
-
-categoria_escolhida = config.acell("B2").value
-
-if not categoria_escolhida:
-    categoria_escolhida = "TODAS"
-
-categoria_escolhida = categoria_escolhida.strip()
-
-
-# ===== FILTROS =====
-
-df = df[df["item_rating"] >= 4.8]
-
-df = df[
-    df["discount_percentage"] >= 10
-]
-
-df = df.drop_duplicates(
-    subset=["itemid"]
+config.update(
+    range_name="B3",
+    values=[[categoria_atual]]
 )
 
 
 # ===== FILTRAR CATEGORIA =====
 
-if categoria_escolhida.upper() != "TODAS":
+df_categoria = df.copy()
 
-    df = df[
-        df["global_category1"]
+if categoria_atual.upper() != "TODAS":
+
+    df_categoria = df_categoria[
+        df_categoria["global_category1"]
         .astype(str)
+        .str.strip()
         .str.lower()
         ==
-        categoria_escolhida.lower()
+        categoria_atual.lower()
     ]
 
 
-# ===== EXCLUIR PRODUTOS JÁ EXISTENTES =====
+# ===== LER PRODUTOS QUE JÁ ESTÃO NA PLANILHA =====
+
+dados = aba.get_all_values()
+
+produtos_existentes = {}
+
+for numero_linha, linha in enumerate(dados[1:], start=2):
+
+    if not linha:
+        continue
+
+    item_id = str(linha[0]).strip()
+
+    if item_id:
+        produtos_existentes[item_id] = {
+            "linha": numero_linha,
+            "dados": linha
+        }
+
+
+# ===== ATUALIZAR PRODUTOS COM PREÇO ALTERADO =====
+
+atualizacoes = []
+
+feed_por_id = {
+    str(produto["itemid"]): produto
+    for _, produto in df_categoria.iterrows()
+}
+
+for item_id, existente in produtos_existentes.items():
+
+    if item_id not in feed_por_id:
+        continue
+
+    produto = feed_por_id[item_id]
+
+    linha_antiga = existente["dados"]
+
+    preco_antigo_planilha = (
+        numero(linha_antiga[3])
+        if len(linha_antiga) > 3
+        else 0
+    )
+
+    preco_novo = numero(
+        produto["sale_price"]
+    )
+
+    # Se preço não mudou, não faz nada
+    if preco_antigo_planilha == preco_novo:
+        continue
+
+    link_afiliado = (
+        linha_antiga[10].strip()
+        if len(linha_antiga) > 10
+        else ""
+    )
+
+    status = (
+        linha_antiga[12].strip()
+        if len(linha_antiga) > 12
+        else "AGUARDANDO LINK"
+    )
+
+    legenda = gerar_legenda(
+        produto,
+        link_afiliado
+    )
+
+    nova_linha = [[
+        item_id,
+        "Shopee",
+        produto["title"],
+        produto["sale_price"],
+        produto["price"],
+        produto["discount_percentage"],
+        produto["item_rating"],
+        "",
+        produto["global_category1"],
+        produto["product_link"],
+        link_afiliado,
+        legenda,
+        status,
+        pd.Timestamp.now().strftime(
+            "%d/%m/%Y %H:%M"
+        )
+    ]]
+
+    atualizacoes.append({
+        "range":
+            f"A{existente['linha']}:N{existente['linha']}",
+        "values": nova_linha
+    })
+
+
+if atualizacoes:
+
+    aba.batch_update(
+        atualizacoes,
+        value_input_option="USER_ENTERED"
+    )
+
+
+# ===== SELECIONAR NOVAS OFERTAS =====
+
+novos = df_categoria[
+    (df_categoria["item_rating"] >= 4.8)
+    &
+    (df_categoria["discount_percentage"] >= 10)
+].copy()
 
 ids_existentes = set(
-    str(x).strip()
-    for x in aba.col_values(1)
+    produtos_existentes.keys()
 )
 
-df["itemid"] = df["itemid"].astype(str)
-
-df = df[
-    ~df["itemid"].isin(ids_existentes)
+novos = novos[
+    ~novos["itemid"].isin(ids_existentes)
 ]
 
-
-# ===== ORDENAR MELHORES OFERTAS =====
-
-df = df.sort_values(
+novos = novos.sort_values(
     by=[
         "discount_percentage",
         "item_rating"
@@ -229,21 +325,17 @@ df = df.sort_values(
     ]
 )
 
-
-# ===== SOMENTE AS 5 MELHORES =====
-
-df = df.head(5)
+# Até 5 novas ofertas por execução
+novos = novos.head(5)
 
 
-# ===== ENVIAR PARA PLANILHA =====
+# ===== ADICIONAR NOVOS PRODUTOS =====
 
-linhas = []
+linhas_novas = []
 
-for _, produto in df.iterrows():
+for _, produto in novos.iterrows():
 
-    legenda = gerar_legenda(produto)
-
-    linhas.append([
+    linhas_novas.append([
         produto["itemid"],
         "Shopee",
         produto["title"],
@@ -255,7 +347,7 @@ for _, produto in df.iterrows():
         produto["global_category1"],
         produto["product_link"],
         "",
-        legenda,
+        gerar_legenda(produto),
         "AGUARDANDO LINK",
         pd.Timestamp.now().strftime(
             "%d/%m/%Y %H:%M"
@@ -263,21 +355,14 @@ for _, produto in df.iterrows():
     ])
 
 
-if linhas:
+if linhas_novas:
+
     aba.append_rows(
-        linhas,
+        linhas_novas,
         value_input_option="USER_ENTERED"
     )
 
 
-print(
-    f"Categoria: {categoria_escolhida}"
-)
-
-print(
-    f"{len(linhas)} ofertas selecionadas."
-)
-
-print(
-    f"{len(atualizacoes)} ofertas ficaram PRONTAS."
-)
+print(f"Categoria: {categoria_atual}")
+print(f"Produtos atualizados: {len(atualizacoes)}")
+print(f"Novos produtos adicionados: {len(linhas_novas)}")
