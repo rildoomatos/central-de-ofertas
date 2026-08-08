@@ -26,12 +26,18 @@ gc = gspread.authorize(credentials)
 planilha = gc.open_by_key(os.environ["GOOGLE_SHEET_ID"])
 aba = planilha.worksheet("OFERTAS")
 
+
 # ===== FUNÇÕES =====
 
 def moeda(valor):
     try:
         valor = float(valor)
-        return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return (
+            f"R$ {valor:,.2f}"
+            .replace(",", "X")
+            .replace(".", ",")
+            .replace("X", ".")
+        )
     except:
         return str(valor)
 
@@ -68,6 +74,43 @@ def gerar_legenda(produto):
     return legenda
 
 
+# ===== ATUALIZAR LEGENDAS COM LINK DE AFILIADO =====
+
+dados_planilha = aba.get_all_values()
+
+atualizacoes = []
+
+for numero_linha, linha in enumerate(dados_planilha[1:], start=2):
+
+    if len(linha) < 13:
+        continue
+
+    link_afiliado = linha[10].strip()
+    legenda = linha[11]
+    status = linha[12]
+
+    if link_afiliado and status != "PRONTO":
+
+        if "[COLE O LINK DE AFILIADO]" in legenda:
+            legenda_final = legenda.replace(
+                "[COLE O LINK DE AFILIADO]",
+                link_afiliado
+            )
+        else:
+            legenda_final = legenda
+
+        atualizacoes.append({
+            "range": f"L{numero_linha}:M{numero_linha}",
+            "values": [[legenda_final, "PRONTO"]]
+        })
+
+if atualizacoes:
+    aba.batch_update(
+        atualizacoes,
+        value_input_option="USER_ENTERED"
+    )
+
+
 # ===== BAIXAR CSV =====
 
 arquivo = "feed.csv"
@@ -78,9 +121,11 @@ r.raise_for_status()
 with open(arquivo, "wb") as f:
     f.write(r.content)
 
+
 # ===== LER CSV =====
 
 df = pd.read_csv(arquivo)
+
 
 # ===== FILTROS =====
 
@@ -89,12 +134,14 @@ df = df[df["discount_percentage"] >= 10]
 
 df = df.drop_duplicates(subset=["itemid"])
 
+
 # ===== ORDENAR MELHORES OFERTAS =====
 
 df = df.sort_values(
     by=["discount_percentage", "item_rating"],
     ascending=[False, False]
 )
+
 
 # ===== EXCLUIR PRODUTOS JÁ EXISTENTES =====
 
@@ -111,7 +158,8 @@ df = df[
     ~df["itemid"].isin(ids_existentes)
 ]
 
-# ===== ENVIAR PARA PLANILHA =====
+
+# ===== ENVIAR NOVAS OFERTAS PARA PLANILHA =====
 
 linhas = []
 
@@ -144,4 +192,5 @@ if linhas:
         value_input_option="USER_ENTERED"
     )
 
-print(f"{len(linhas)} produtos enviados.")
+print(f"{len(linhas)} novas ofertas enviadas.")
+print(f"{len(atualizacoes)} ofertas ficaram PRONTAS.")
