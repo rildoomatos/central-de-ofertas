@@ -44,11 +44,10 @@ df = df[df["discount_percentage"] >= 10]
 df = df.drop_duplicates(subset=["itemid"])
 
 # ===== ENVIAR PARA PLANILHA =====
-for _, produto in df.iterrows():
+linhas = []
 
 for _, produto in df.iterrows():
-
-    aba.append_row([
+    linhas.append([
         produto["itemid"],
         produto["title"],
         produto["price"],
@@ -59,4 +58,7 @@ for _, produto in df.iterrows():
         produto["image_link"]
     ])
 
-print(f"{len(df)} produtos enviados.")
+if linhas:
+    aba.append_rows(linhas, value_input_option="USER_ENTERED")
+
+print(f"{len(linhas)} produtos enviados.")
