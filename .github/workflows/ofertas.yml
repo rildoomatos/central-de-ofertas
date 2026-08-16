@@ -32,4 +32,4 @@ jobs:
           SHOPEE_APP_ID: ${{ secrets.SHOPEE_APP_ID }}
           SHOPEE_API_PASSWORD: ${{ secrets.SHOPEE_API_PASSWORD }}
         run: |
-          python main.py
+          python teste_shopee.py
