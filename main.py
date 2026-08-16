@@ -836,6 +836,22 @@ for item_id, existente in (
     )
 
 
+    # =====================================================
+    # PRESERVAR O STATUS ATUAL
+    # =====================================================
+
+    status_atual = (
+        linha_antiga[12].strip()
+        if len(linha_antiga) > 12
+        else ""
+    )
+
+    if status_atual.upper() == "ENVIADO":
+        status_final = "ENVIADO"
+    else:
+        status_final = "PRONTO"
+
+
     link_estava_ausente = (
         not link_afiliado
     )
@@ -977,7 +993,7 @@ for item_id, existente in (
 
             legenda,
 
-            "PRONTO",
+            status_final,
 
             pd.Timestamp.now().strftime(
                 "%d/%m/%Y %H:%M"
