@@ -89,7 +89,6 @@ aba.update(
 
 def numero(valor):
     try:
-
         texto = (
             str(valor)
             .replace("R$", "")
@@ -111,7 +110,6 @@ def numero(valor):
 
 def moeda(valor):
     try:
-
         valor = float(valor)
 
         return (
@@ -129,7 +127,6 @@ def calcular_preco_original(
     preco_atual,
     desconto
 ):
-
     preco_atual = float(
         preco_atual
     )
@@ -198,7 +195,6 @@ def calcular_score(produto):
 def calcular_comissao(produto):
 
     try:
-
         comissao = float(
             produto.get("commission")
             or 0
@@ -242,6 +238,10 @@ def formula_imagem(url):
     return f'=IMAGE("{url}")'
 
 
+# =========================================================
+# LINK PARA WHATSAPP
+# =========================================================
+
 def formula_whatsapp(legenda):
 
     if not legenda:
@@ -257,8 +257,9 @@ def formula_whatsapp(legenda):
         f"?text={texto_codificado}"
     )
 
+    # Google Sheets em português usa ;
     return (
-        f'=HYPERLINK("{url}","ENVIAR")'
+        f'=HYPERLINK("{url}";"ENVIAR")'
     )
 
 
@@ -310,7 +311,6 @@ def chamar_api(query):
     resultado = resposta.json()
 
     if resultado.get("errors"):
-
         raise Exception(
             f"Erro API Shopee: "
             f"{resultado['errors']}"
@@ -355,7 +355,6 @@ def buscar_produtos(
     filtro_categoria = ""
 
     if categoria_id:
-
         filtro_categoria = (
             f"productCatId:"
             f"{int(categoria_id)}"
@@ -531,7 +530,6 @@ def gerar_legenda(
 # =========================================================
 
 try:
-
     config = planilha.worksheet(
         "CONFIG"
     )
