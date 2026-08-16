@@ -42,20 +42,67 @@ aba = planilha.worksheet("OFERTAS")
 
 
 # =========================================================
+# GARANTIR AS 18 COLUNAS
+# =========================================================
+
+if aba.col_count < 18:
+    aba.resize(cols=18)
+
+
+# =========================================================
+# CABEÇALHOS
+# =========================================================
+
+cabecalhos = [[
+    "ID",
+    "Marketplace",
+    "Produto",
+    "Preço Atual",
+    "Preço Anterior",
+    "Desconto",
+    "Avaliação",
+    "Vendas",
+    "Categoria",
+    "Link Original",
+    "Link Afiliado",
+    "Legenda",
+    "Status",
+    "Data",
+    "Imagem",
+    "Comissão %",
+    "Comissão estimada",
+    "Pontuação"
+]]
+
+aba.update(
+    range_name="A1:R1",
+    values=cabecalhos
+)
+
+
+# =========================================================
 # FUNÇÕES AUXILIARES
 # =========================================================
 
 def numero(valor):
     try:
-        return float(
+        texto = (
             str(valor)
             .replace("R$", "")
-            .replace(".", "")
-            .replace(",", ".")
             .strip()
         )
+
+        if "," in texto:
+            texto = (
+                texto
+                .replace(".", "")
+                .replace(",", ".")
+            )
+
+        return float(texto)
+
     except:
-        return 0
+        return 0.0
 
 
 def moeda(valor):
@@ -73,18 +120,121 @@ def moeda(valor):
         return str(valor)
 
 
-def calcular_preco_original(preco_atual, desconto):
+def calcular_preco_original(
+    preco_atual,
+    desconto
+):
 
-    preco_atual = float(preco_atual)
-    desconto = float(desconto)
+    preco_atual = float(
+        preco_atual
+    )
 
-    if desconto <= 0 or desconto >= 100:
+    desconto = float(
+        desconto
+    )
+
+    if (
+        desconto <= 0
+        or
+        desconto >= 100
+    ):
         return preco_atual
 
     return round(
-        preco_atual / (1 - desconto / 100),
+        preco_atual
+        /
+        (1 - desconto / 100),
         2
     )
+
+
+def calcular_score(produto):
+
+    vendas = int(
+        produto.get("sales")
+        or 0
+    )
+
+    avaliacao = float(
+        produto.get("ratingStar")
+        or 0
+    )
+
+    desconto = float(
+        produto.get("priceDiscountRate")
+        or 0
+    )
+
+    comissao = float(
+        produto.get("commissionRate")
+        or 0
+    )
+
+    comissao_percentual = (
+        comissao * 100
+    )
+
+    score = (
+        (comissao_percentual * 3)
+        +
+        (min(vendas, 10000) / 100)
+        +
+        desconto
+        +
+        (avaliacao * 5)
+    )
+
+    return round(
+        score,
+        2
+    )
+
+
+def calcular_comissao(produto):
+
+    try:
+
+        comissao = float(
+            produto.get("commission")
+            or 0
+        )
+
+        if comissao > 0:
+            return round(
+                comissao,
+                2
+            )
+
+    except:
+        pass
+
+    preco = float(
+        produto.get("priceMin")
+        or 0
+    )
+
+    taxa = float(
+        produto.get("commissionRate")
+        or 0
+    )
+
+    return round(
+        preco * taxa,
+        2
+    )
+
+
+def formula_imagem(url):
+
+    if not url:
+        return ""
+
+    url = str(url).replace(
+        '"',
+        ""
+    )
+
+    return f'=IMAGE("{url}")'
 
 
 # =========================================================
@@ -119,7 +269,8 @@ def chamar_api(query):
             f"Timestamp={timestamp},"
             f"Signature={signature}"
         ),
-        "Content-Type": "application/json"
+        "Content-Type":
+            "application/json"
     }
 
     resposta = requests.post(
@@ -134,8 +285,10 @@ def chamar_api(query):
     resultado = resposta.json()
 
     if resultado.get("errors"):
+
         raise Exception(
-            f"Erro API Shopee: {resultado['errors']}"
+            f"Erro API Shopee: "
+            f"{resultado['errors']}"
         )
 
     return resultado.get(
@@ -177,8 +330,10 @@ def buscar_produtos(
     filtro_categoria = ""
 
     if categoria_id:
+
         filtro_categoria = (
-            f"productCatId:{int(categoria_id)}"
+            f"productCatId:"
+            f"{int(categoria_id)}"
         )
 
     query = f"""
@@ -202,7 +357,9 @@ def buscar_produtos(
     }}
     """
 
-    dados = chamar_api(query)
+    dados = chamar_api(
+        query
+    )
 
     return dados.get(
         "productOfferV2",
@@ -210,7 +367,13 @@ def buscar_produtos(
     )
 
 
-def buscar_produto_por_id(item_id):
+# =========================================================
+# BUSCAR PRODUTO PELO ID
+# =========================================================
+
+def buscar_produto_por_id(
+    item_id
+):
 
     query = f"""
     {{
@@ -226,7 +389,9 @@ def buscar_produto_por_id(item_id):
     }}
     """
 
-    dados = chamar_api(query)
+    dados = chamar_api(
+        query
+    )
 
     resultado = dados.get(
         "productOfferV2",
@@ -245,10 +410,12 @@ def buscar_produto_por_id(item_id):
 
 
 # =========================================================
-# GERAR LINK DE AFILIADO
+# GERAR LINK AFILIADO
 # =========================================================
 
-def gerar_link_afiliado(url_original):
+def gerar_link_afiliado(
+    url_original
+):
 
     url_segura = json.dumps(
         str(url_original)
@@ -266,7 +433,9 @@ def gerar_link_afiliado(url_original):
     }}
     """
 
-    dados = chamar_api(query)
+    dados = chamar_api(
+        query
+    )
 
     resultado = dados.get(
         "generateShortLink",
@@ -283,27 +452,38 @@ def gerar_link_afiliado(url_original):
 # GERAR LEGENDA
 # =========================================================
 
-def gerar_legenda(produto, link_afiliado):
+def gerar_legenda(
+    produto,
+    link_afiliado
+):
 
     preco_atual = float(
-        produto.get("priceMin") or 0
+        produto.get("priceMin")
+        or 0
     )
 
     desconto = float(
-        produto.get("priceDiscountRate") or 0
+        produto.get(
+            "priceDiscountRate"
+        )
+        or 0
     )
 
-    preco_anterior = calcular_preco_original(
-        preco_atual,
-        desconto
+    preco_anterior = (
+        calcular_preco_original(
+            preco_atual,
+            desconto
+        )
     )
 
     avaliacao = float(
-        produto.get("ratingStar") or 0
+        produto.get("ratingStar")
+        or 0
     )
 
     vendas = int(
-        produto.get("sales") or 0
+        produto.get("sales")
+        or 0
     )
 
     return (
@@ -316,7 +496,8 @@ def gerar_legenda(produto, link_afiliado):
         f"🛒 +{vendas} vendidos\n\n"
         "👉 *Compre aqui:*\n"
         f"{link_afiliado}\n\n"
-        "⚠️ Preço e disponibilidade podem mudar a qualquer momento!"
+        "⚠️ Preço e disponibilidade podem "
+        "mudar a qualquer momento!"
     )
 
 
@@ -332,18 +513,29 @@ try:
 
 except gspread.WorksheetNotFound:
 
-    config = planilha.add_worksheet(
-        title="CONFIG",
-        rows=200,
-        cols=2
+    config = (
+        planilha.add_worksheet(
+            title="CONFIG",
+            rows=200,
+            cols=2
+        )
     )
 
     config.update(
         range_name="A1:B3",
         values=[
-            ["CONFIGURAÇÃO", "VALOR"],
-            ["Categoria", "TODAS"],
-            ["Categoria anterior", ""]
+            [
+                "CONFIGURAÇÃO",
+                "VALOR"
+            ],
+            [
+                "Categoria",
+                "TODAS"
+            ],
+            [
+                "Categoria anterior",
+                ""
+            ]
         ]
     )
 
@@ -360,7 +552,7 @@ categoria_anterior = (
 
 
 # =========================================================
-# FEED USADO SOMENTE PARA MAPEAR CATEGORIAS
+# FEED SOMENTE PARA CATEGORIAS
 # =========================================================
 
 feed = requests.get(
@@ -397,18 +589,31 @@ df_categorias = (
 
 mapa_categorias = {}
 
-for _, linha in df_categorias.iterrows():
+
+for _, linha in (
+    df_categorias.iterrows()
+):
 
     nome = str(
-        linha["global_category1"]
+        linha[
+            "global_category1"
+        ]
     ).strip()
 
     categoria_id_feed = int(
-        linha["global_catid1"]
+        linha[
+            "global_catid1"
+        ]
     )
 
-    if nome not in mapa_categorias:
-        mapa_categorias[nome] = categoria_id_feed
+    if (
+        nome
+        not in mapa_categorias
+    ):
+
+        mapa_categorias[
+            nome
+        ] = categoria_id_feed
 
 
 categorias = sorted(
@@ -417,44 +622,58 @@ categorias = sorted(
 
 
 # =========================================================
-# ATUALIZAR CATEGORIAS NA ABA CONFIG
+# ATUALIZAR LISTA DE CATEGORIAS
 # =========================================================
 
 config.update(
     range_name="A4",
     values=[
-        ["CATEGORIAS DISPONÍVEIS"]
+        [
+            "CATEGORIAS DISPONÍVEIS"
+        ]
     ]
 )
+
 
 if categorias:
 
     config.update(
-        range_name=f"A5:A{4 + len(categorias)}",
+        range_name=(
+            f"A5:"
+            f"A{4 + len(categorias)}"
+        ),
         values=[
             [categoria]
-            for categoria in categorias
+            for categoria
+            in categorias
         ]
     )
 
 
 # =========================================================
-# DESCOBRIR ID DA CATEGORIA
+# ID DA CATEGORIA
 # =========================================================
 
 categoria_id = None
 
-if categoria_atual.upper() != "TODAS":
 
-    categoria_id = mapa_categorias.get(
-        categoria_atual
+if (
+    categoria_atual.upper()
+    != "TODAS"
+):
+
+    categoria_id = (
+        mapa_categorias.get(
+            categoria_atual
+        )
     )
 
     if categoria_id is None:
 
         raise Exception(
-            f"Categoria '{categoria_atual}' "
-            "não encontrada."
+            f"Categoria "
+            f"'{categoria_atual}' "
+            f"não encontrada."
         )
 
 
@@ -464,7 +683,9 @@ if categoria_atual.upper() != "TODAS":
 
 if not categoria_anterior:
 
-    dados_atuais = aba.get_all_values()
+    dados_atuais = (
+        aba.get_all_values()
+    )
 
     if (
         len(dados_atuais) > 1
@@ -482,24 +703,23 @@ trocou_categoria = (
     categoria_anterior
     and
     categoria_atual.lower()
-    != categoria_anterior.lower()
+    !=
+    categoria_anterior.lower()
 )
 
-
-# Se mudou a categoria, limpa as ofertas antigas
 
 if trocou_categoria:
 
     if aba.row_count > 1:
 
         aba.batch_clear([
-            f"A2:N{aba.row_count}"
+            f"A2:R{aba.row_count}"
         ])
 
     print(
         f"Categoria alterada: "
-        f"{categoria_anterior} → "
-        f"{categoria_atual}"
+        f"{categoria_anterior} "
+        f"→ {categoria_atual}"
     )
 
 
@@ -539,8 +759,10 @@ for numero_linha, linha in enumerate(
         produtos_existentes[
             item_id
         ] = {
-            "linha": numero_linha,
-            "dados": linha
+            "linha":
+                numero_linha,
+            "dados":
+                linha
         }
 
 
@@ -551,29 +773,39 @@ for numero_linha, linha in enumerate(
 atualizacoes = []
 
 
-for item_id, existente in produtos_existentes.items():
+for item_id, existente in (
+    produtos_existentes.items()
+):
 
-    produto = buscar_produto_por_id(
-        item_id
+    produto = (
+        buscar_produto_por_id(
+            item_id
+        )
     )
 
     if not produto:
         continue
 
+
     linha_antiga = (
         existente["dados"]
     )
 
+
     preco_planilha = (
-        numero(linha_antiga[3])
+        numero(
+            linha_antiga[3]
+        )
         if len(linha_antiga) > 3
         else 0
     )
+
 
     preco_api = float(
         produto.get("priceMin")
         or 0
     )
+
 
     link_afiliado = (
         linha_antiga[10].strip()
@@ -582,28 +814,13 @@ for item_id, existente in produtos_existentes.items():
     )
 
 
-    # Se preço não mudou e já possui link,
-    # não altera nada
-
-    if (
-        round(preco_planilha, 2)
-        ==
-        round(preco_api, 2)
-        and
-        link_afiliado
-    ):
-
-        continue
-
-
-    # Se ainda não possui link,
-    # gera automaticamente
-
     if not link_afiliado:
 
         link_afiliado = (
             gerar_link_afiliado(
-                produto["productLink"]
+                produto[
+                    "productLink"
+                ]
             )
         )
 
@@ -611,8 +828,10 @@ for item_id, existente in produtos_existentes.items():
     desconto = float(
         produto.get(
             "priceDiscountRate"
-        ) or 0
+        )
+        or 0
     )
+
 
     preco_anterior = (
         calcular_preco_original(
@@ -622,62 +841,162 @@ for item_id, existente in produtos_existentes.items():
     )
 
 
-    legenda = gerar_legenda(
-        produto,
-        link_afiliado
+    comissao_percentual = round(
+        float(
+            produto.get(
+                "commissionRate"
+            )
+            or 0
+        ) * 100,
+        2
     )
 
 
-    nova_linha = [[
+    comissao_estimada = (
+        calcular_comissao(
+            produto
+        )
+    )
 
-        str(produto["itemId"]),
-        "Shopee",
-        produto["productName"],
-        preco_api,
-        preco_anterior,
-        desconto,
-        float(
-            produto.get(
-                "ratingStar"
-            ) or 0
-        ),
-        int(
-            produto.get(
-                "sales"
-            ) or 0
-        ),
-        categoria_atual,
-        produto["productLink"],
-        link_afiliado,
-        legenda,
-        "PRONTO",
-        pd.Timestamp.now().strftime(
-            "%d/%m/%Y %H:%M"
+
+    score = (
+        calcular_score(
+            produto
+        )
+    )
+
+
+    imagem = formula_imagem(
+        produto.get(
+            "imageUrl",
+            ""
+        )
+    )
+
+
+    preco_mudou = (
+        round(
+            preco_planilha,
+            2
+        )
+        !=
+        round(
+            preco_api,
+            2
+        )
+    )
+
+
+    # Se o preço mudou,
+    # atualiza a linha completa.
+
+    if preco_mudou:
+
+        legenda = gerar_legenda(
+            produto,
+            link_afiliado
         )
 
-    ]]
+        nova_linha = [[
+
+            str(
+                produto["itemId"]
+            ),
+
+            "Shopee",
+
+            produto[
+                "productName"
+            ],
+
+            preco_api,
+
+            preco_anterior,
+
+            desconto,
+
+            float(
+                produto.get(
+                    "ratingStar"
+                )
+                or 0
+            ),
+
+            int(
+                produto.get(
+                    "sales"
+                )
+                or 0
+            ),
+
+            categoria_atual,
+
+            produto[
+                "productLink"
+            ],
+
+            link_afiliado,
+
+            legenda,
+
+            "PRONTO",
+
+            pd.Timestamp.now().strftime(
+                "%d/%m/%Y %H:%M"
+            ),
+
+            imagem,
+
+            comissao_percentual,
+
+            comissao_estimada,
+
+            score
+
+        ]]
 
 
-    atualizacoes.append({
+        atualizacoes.append({
+            "range":
+                f"A{existente['linha']}:"
+                f"R{existente['linha']}",
 
-        "range":
-            f"A{existente['linha']}:"
-            f"N{existente['linha']}",
-
-        "values":
-            nova_linha
-
-    })
+            "values":
+                nova_linha
+        })
 
 
-    time.sleep(0.15)
+    # Se o preço não mudou,
+    # apenas preenche/atualiza
+    # imagem, comissão e pontuação.
+
+    else:
+
+        atualizacoes.append({
+            "range":
+                f"O{existente['linha']}:"
+                f"R{existente['linha']}",
+
+            "values": [[
+                imagem,
+                comissao_percentual,
+                comissao_estimada,
+                score
+            ]]
+        })
+
+
+    time.sleep(
+        0.15
+    )
 
 
 if atualizacoes:
 
     aba.batch_update(
         atualizacoes,
-        value_input_option="USER_ENTERED"
+        value_input_option=
+            "USER_ENTERED"
     )
 
 
@@ -696,13 +1015,21 @@ pagina = 1
 MAX_PAGINAS = 10
 
 
-while pagina <= MAX_PAGINAS:
+while (
+    pagina <= MAX_PAGINAS
+):
 
-    resultado = buscar_produtos(
-        categoria_id=categoria_id,
-        pagina=pagina,
-        limite=50
+    resultado = (
+        buscar_produtos(
+            categoria_id=
+                categoria_id,
+            pagina=
+                pagina,
+            limite=
+                50
+        )
     )
+
 
     produtos = resultado.get(
         "nodes",
@@ -717,22 +1044,34 @@ while pagina <= MAX_PAGINAS:
     for produto in produtos:
 
         item_id = str(
-            produto.get("itemId")
+            produto.get(
+                "itemId"
+            )
         )
 
-        if item_id in ids_existentes:
+
+        if (
+            item_id
+            in ids_existentes
+        ):
             continue
 
 
         vendas = int(
-            produto.get("sales")
+            produto.get(
+                "sales"
+            )
             or 0
         )
 
+
         avaliacao = float(
-            produto.get("ratingStar")
+            produto.get(
+                "ratingStar"
+            )
             or 0
         )
+
 
         desconto = float(
             produto.get(
@@ -740,6 +1079,7 @@ while pagina <= MAX_PAGINAS:
             )
             or 0
         )
+
 
         comissao = float(
             produto.get(
@@ -749,53 +1089,32 @@ while pagina <= MAX_PAGINAS:
         )
 
 
-        # =================================================
+        # =============================
         # FILTROS
-        # =================================================
+        # =============================
 
-        # Comissão mínima: 5%
         if comissao < 0.05:
             continue
 
-        # Avaliação mínima: 4.8
         if avaliacao < 4.8:
             continue
 
-        # Mais de 500 vendas
         if vendas <= 500:
             continue
 
-        # Desconto mínimo: 10%
         if desconto < 10:
             continue
 
 
-        # =================================================
+        # =============================
         # PONTUAÇÃO
-        # =================================================
+        # =============================
 
-        comissao_percentual = (
-            comissao * 100
+        produto["_score"] = (
+            calcular_score(
+                produto
+            )
         )
-
-
-        # Comissão tem maior peso.
-        # Vendas comprovam procura.
-        # Desconto aumenta atratividade.
-        # Avaliação aumenta confiança.
-
-        score = (
-            (comissao_percentual * 3)
-            +
-            (min(vendas, 10000) / 100)
-            +
-            desconto
-            +
-            (avaliacao * 5)
-        )
-
-
-        produto["_score"] = score
 
         candidatos.append(
             produto
@@ -818,18 +1137,21 @@ while pagina <= MAX_PAGINAS:
 
 
 # =========================================================
-# RANQUEAR CANDIDATOS
+# ORDENAR PELA PONTUAÇÃO
 # =========================================================
 
 candidatos = sorted(
     candidatos,
-    key=lambda produto: produto["_score"],
+    key=lambda produto:
+        produto["_score"],
     reverse=True
 )
 
 
-# Somente as 5 melhores ofertas
-novas_ofertas = candidatos[:5]
+# Apenas as 5 melhores
+novas_ofertas = (
+    candidatos[:5]
+)
 
 
 # =========================================================
@@ -844,14 +1166,18 @@ for produto in novas_ofertas:
     preco_atual = float(
         produto.get(
             "priceMin"
-        ) or 0
+        )
+        or 0
     )
+
 
     desconto = float(
         produto.get(
             "priceDiscountRate"
-        ) or 0
+        )
+        or 0
     )
+
 
     preco_anterior = (
         calcular_preco_original(
@@ -861,11 +1187,11 @@ for produto in novas_ofertas:
     )
 
 
-    # Gerar link afiliado automaticamente
-
     link_afiliado = (
         gerar_link_afiliado(
-            produto["productLink"]
+            produto[
+                "productLink"
+            ]
         )
     )
 
@@ -876,44 +1202,109 @@ for produto in novas_ofertas:
     )
 
 
+    comissao_percentual = round(
+        float(
+            produto.get(
+                "commissionRate"
+            )
+            or 0
+        ) * 100,
+        2
+    )
+
+
+    comissao_estimada = (
+        calcular_comissao(
+            produto
+        )
+    )
+
+
+    score = (
+        calcular_score(
+            produto
+        )
+    )
+
+
+    imagem = formula_imagem(
+        produto.get(
+            "imageUrl",
+            ""
+        )
+    )
+
+
     linhas_novas.append([
 
-        str(produto["itemId"]),
+        str(
+            produto["itemId"]
+        ),
+
         "Shopee",
-        produto["productName"],
+
+        produto[
+            "productName"
+        ],
+
         preco_atual,
+
         preco_anterior,
+
         desconto,
+
         float(
             produto.get(
                 "ratingStar"
-            ) or 0
+            )
+            or 0
         ),
+
         int(
             produto.get(
                 "sales"
-            ) or 0
+            )
+            or 0
         ),
+
         categoria_atual,
-        produto["productLink"],
+
+        produto[
+            "productLink"
+        ],
+
         link_afiliado,
+
         legenda,
+
         "PRONTO",
+
         pd.Timestamp.now().strftime(
             "%d/%m/%Y %H:%M"
-        )
+        ),
+
+        imagem,
+
+        comissao_percentual,
+
+        comissao_estimada,
+
+        score
 
     ])
 
 
-    time.sleep(0.15)
+    time.sleep(
+        0.15
+    )
 
 
 if linhas_novas:
 
     aba.append_rows(
         linhas_novas,
-        value_input_option="USER_ENTERED"
+        value_input_option=
+            "USER_ENTERED"
     )
 
 
@@ -922,11 +1313,13 @@ if linhas_novas:
 # =========================================================
 
 print(
-    f"Categoria: {categoria_atual}"
+    f"Categoria: "
+    f"{categoria_atual}"
 )
 
 print(
-    f"Produtos analisados para ranking: "
+    f"Produtos analisados "
+    f"para ranking: "
     f"{len(candidatos)}"
 )
 
@@ -936,10 +1329,12 @@ print(
 )
 
 print(
-    f"Novas ofertas adicionadas: "
+    f"Novas ofertas "
+    f"adicionadas: "
     f"{len(linhas_novas)}"
 )
 
 print(
-    "Automação concluída com sucesso."
+    "Automação concluída "
+    "com sucesso."
 )
