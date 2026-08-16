@@ -127,6 +127,7 @@ def calcular_preco_original(
     preco_atual,
     desconto
 ):
+
     preco_atual = float(
         preco_atual
     )
@@ -249,15 +250,15 @@ def formula_whatsapp(legenda):
 
     texto_codificado = quote(
         str(legenda),
-        safe=""
+        safe="",
+        encoding="utf-8"
     )
 
     url = (
-        "https://wa.me/"
+        "https://api.whatsapp.com/send/"
         f"?text={texto_codificado}"
     )
 
-    # Google Sheets em português usa ;
     return (
         f'=HYPERLINK("{url}";"ENVIAR")'
     )
@@ -311,6 +312,7 @@ def chamar_api(query):
     resultado = resposta.json()
 
     if resultado.get("errors"):
+
         raise Exception(
             f"Erro API Shopee: "
             f"{resultado['errors']}"
@@ -355,6 +357,7 @@ def buscar_produtos(
     filtro_categoria = ""
 
     if categoria_id:
+
         filtro_categoria = (
             f"productCatId:"
             f"{int(categoria_id)}"
@@ -530,6 +533,7 @@ def gerar_legenda(
 # =========================================================
 
 try:
+
     config = planilha.worksheet(
         "CONFIG"
     )
