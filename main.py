@@ -1,18 +1,31 @@
 import json
 import os
+import time
+import hashlib
 import pandas as pd
 import requests
 import gspread
 from google.oauth2.service_account import Credentials
 
+
+# =========================================================
+# CONFIGURAÇÕES
+# =========================================================
+
+APP_ID = os.environ["SHOPEE_APP_ID"]
+SECRET = os.environ["SHOPEE_API_PASSWORD"]
 CSV_URL = os.environ["SHOPEE_FEED_URL"]
+
+API_URL = "https://open-api.affiliate.shopee.com.br/graphql"
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
 
-credenciais = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+credenciais = json.loads(
+    os.environ["GOOGLE_CREDENTIALS"]
+)
 
 credentials = Credentials.from_service_account_info(
     credenciais,
@@ -21,102 +34,297 @@ credentials = Credentials.from_service_account_info(
 
 gc = gspread.authorize(credentials)
 
-planilha = gc.open_by_key(os.environ["GOOGLE_SHEET_ID"])
+planilha = gc.open_by_key(
+    os.environ["GOOGLE_SHEET_ID"]
+)
+
 aba = planilha.worksheet("OFERTAS")
+
+
+# =========================================================
+# FUNÇÕES AUXILIARES
+# =========================================================
+
+def numero(valor):
+    try:
+        return float(
+            str(valor)
+            .replace("R$", "")
+            .replace(".", "")
+            .replace(",", ".")
+            .strip()
+        )
+    except:
+        return 0
 
 
 def moeda(valor):
     try:
         valor = float(valor)
+
         return (
             f"R$ {valor:,.2f}"
             .replace(",", "X")
             .replace(".", ",")
             .replace("X", ".")
         )
+
     except:
         return str(valor)
 
 
-def numero(valor):
-    try:
-        return round(float(str(valor).replace(",", ".")), 2)
-    except:
-        return 0
+def calcular_preco_original(preco_atual, desconto):
 
+    preco_atual = float(preco_atual)
+    desconto = float(desconto)
 
-def gerar_legenda(produto, link_afiliado=""):
+    if desconto <= 0 or desconto >= 100:
+        return preco_atual
 
-    preco_atual = moeda(produto["sale_price"])
-    preco_antigo = moeda(produto["price"])
-
-    desconto = int(float(produto["discount_percentage"]))
-
-    avaliacao = (
-        f"{float(produto['item_rating']):.1f}"
-        .replace(".", ",")
+    return round(
+        preco_atual / (1 - desconto / 100),
+        2
     )
 
-    link = (
-        link_afiliado
-        if link_afiliado
-        else "[COLE O LINK DE AFILIADO]"
+
+# =========================================================
+# API SHOPEE
+# =========================================================
+
+def chamar_api(query):
+
+    payload = json.dumps(
+        {"query": query},
+        separators=(",", ":")
+    )
+
+    timestamp = str(
+        int(time.time())
+    )
+
+    fator = (
+        APP_ID
+        + timestamp
+        + payload
+        + SECRET
+    )
+
+    signature = hashlib.sha256(
+        fator.encode("utf-8")
+    ).hexdigest()
+
+    headers = {
+        "Authorization": (
+            f"SHA256 Credential={APP_ID},"
+            f"Timestamp={timestamp},"
+            f"Signature={signature}"
+        ),
+        "Content-Type": "application/json"
+    }
+
+    resposta = requests.post(
+        API_URL,
+        data=payload,
+        headers=headers,
+        timeout=60
+    )
+
+    resposta.raise_for_status()
+
+    resultado = resposta.json()
+
+    if resultado.get("errors"):
+        raise Exception(
+            f"Erro API Shopee: {resultado['errors']}"
+        )
+
+    return resultado.get(
+        "data",
+        {}
+    )
+
+
+# =========================================================
+# BUSCAR PRODUTOS
+# =========================================================
+
+CAMPOS_PRODUTO = """
+itemId
+productName
+sales
+ratingStar
+priceMin
+priceMax
+priceDiscountRate
+commissionRate
+commission
+productLink
+imageUrl
+productCatIds
+"""
+
+
+def buscar_produtos(
+    categoria_id=None,
+    pagina=1,
+    limite=50
+):
+
+    filtro_categoria = ""
+
+    if categoria_id:
+        filtro_categoria = (
+            f"productCatId:{int(categoria_id)}"
+        )
+
+    query = f"""
+    {{
+      productOfferV2(
+        listType:0
+        {filtro_categoria}
+        sortType:2
+        page:{pagina}
+        limit:{limite}
+      ) {{
+        nodes {{
+          {CAMPOS_PRODUTO}
+        }}
+        pageInfo {{
+          page
+          limit
+          hasNextPage
+        }}
+      }}
+    }}
+    """
+
+    dados = chamar_api(query)
+
+    return dados.get(
+        "productOfferV2",
+        {}
+    )
+
+
+def buscar_produto_por_id(item_id):
+
+    query = f"""
+    {{
+      productOfferV2(
+        itemId:{int(item_id)}
+        page:1
+        limit:1
+      ) {{
+        nodes {{
+          {CAMPOS_PRODUTO}
+        }}
+      }}
+    }}
+    """
+
+    dados = chamar_api(query)
+
+    resultado = dados.get(
+        "productOfferV2",
+        {}
+    )
+
+    produtos = resultado.get(
+        "nodes",
+        []
+    )
+
+    if produtos:
+        return produtos[0]
+
+    return None
+
+
+# =========================================================
+# GERAR LINK DE AFILIADO AUTOMATICAMENTE
+# =========================================================
+
+def gerar_link_afiliado(url_original):
+
+    url_segura = json.dumps(
+        str(url_original)
+    )
+
+    query = f"""
+    mutation {{
+      generateShortLink(
+        input: {{
+          originUrl: {url_segura}
+        }}
+      ) {{
+        shortLink
+      }}
+    }}
+    """
+
+    dados = chamar_api(query)
+
+    resultado = dados.get(
+        "generateShortLink",
+        {}
+    )
+
+    return resultado.get(
+        "shortLink",
+        ""
+    )
+
+
+# =========================================================
+# LEGENDA
+# =========================================================
+
+def gerar_legenda(produto, link_afiliado):
+
+    preco_atual = float(
+        produto.get("priceMin") or 0
+    )
+
+    desconto = float(
+        produto.get("priceDiscountRate") or 0
+    )
+
+    preco_anterior = calcular_preco_original(
+        preco_atual,
+        desconto
+    )
+
+    avaliacao = float(
+        produto.get("ratingStar") or 0
+    )
+
+    vendas = int(
+        produto.get("sales") or 0
     )
 
     return (
         "🔥 *OFERTA NA SHOPEE!*\n\n"
-        f"🛍️ {produto['title']}\n\n"
-        f"❌ De: {preco_antigo}\n"
-        f"✅ Por: *{preco_atual}*\n"
-        f"🔥 {desconto}% OFF\n"
-        f"⭐ Avaliação: {avaliacao}\n\n"
-        "🛒 *Compre aqui:*\n"
-        f"{link}\n\n"
+        f"🛍️ {produto.get('productName', '')}\n\n"
+        f"❌ De: {moeda(preco_anterior)}\n"
+        f"✅ Por: *{moeda(preco_atual)}*\n"
+        f"🔥 {int(desconto)}% OFF\n"
+        f"⭐ Avaliação: {avaliacao:.1f}\n"
+        f"🛒 +{vendas} vendidos\n\n"
+        "👉 *Compre aqui:*\n"
+        f"{link_afiliado}\n\n"
         "⚠️ Preço e disponibilidade podem mudar a qualquer momento!"
     )
 
 
-# ===== BAIXAR FEED =====
-
-arquivo = "feed.csv"
-
-r = requests.get(CSV_URL, timeout=60)
-r.raise_for_status()
-
-with open(arquivo, "wb") as f:
-    f.write(r.content)
-
-df = pd.read_csv(arquivo)
-
-df["item_rating"] = pd.to_numeric(
-    df["item_rating"],
-    errors="coerce"
-)
-
-df["discount_percentage"] = pd.to_numeric(
-    df["discount_percentage"],
-    errors="coerce"
-)
-
-df["sale_price"] = pd.to_numeric(
-    df["sale_price"],
-    errors="coerce"
-)
-
-df["price"] = pd.to_numeric(
-    df["price"],
-    errors="coerce"
-)
-
-df["itemid"] = df["itemid"].astype(str)
-
-df = df.drop_duplicates(subset=["itemid"])
-
-
-# ===== CONFIG =====
+# =========================================================
+# CONFIG
+# =========================================================
 
 try:
-    config = planilha.worksheet("CONFIG")
+
+    config = planilha.worksheet(
+        "CONFIG"
+    )
 
 except gspread.WorksheetNotFound:
 
@@ -136,116 +344,228 @@ except gspread.WorksheetNotFound:
     )
 
 
-categoria_atual = config.acell("B2").value or "TODAS"
-categoria_atual = categoria_atual.strip()
+categoria_atual = (
+    config.acell("B2").value
+    or "TODAS"
+).strip()
 
-categoria_anterior = config.acell("B3").value or ""
-categoria_anterior = categoria_anterior.strip()
+categoria_anterior = (
+    config.acell("B3").value
+    or ""
+).strip()
 
 
-# Se ainda não existe categoria anterior,
-# tenta descobrir pela planilha atual
+# =========================================================
+# FEED SOMENTE PARA CATEGORIAS
+# =========================================================
+
+feed = requests.get(
+    CSV_URL,
+    timeout=60
+)
+
+feed.raise_for_status()
+
+with open(
+    "categorias.csv",
+    "wb"
+) as arquivo:
+
+    arquivo.write(
+        feed.content
+    )
+
+
+df_categorias = pd.read_csv(
+    "categorias.csv",
+    usecols=[
+        "global_category1",
+        "global_catid1"
+    ]
+)
+
+df_categorias = (
+    df_categorias
+    .dropna()
+    .drop_duplicates()
+)
+
+
+mapa_categorias = {}
+
+for _, linha in df_categorias.iterrows():
+
+    nome = str(
+        linha["global_category1"]
+    ).strip()
+
+    categoria_id = int(
+        linha["global_catid1"]
+    )
+
+    if nome not in mapa_categorias:
+        mapa_categorias[nome] = categoria_id
+
+
+categorias = sorted(
+    mapa_categorias.keys()
+)
+
+
+# Atualizar lista visível na CONFIG
+
+config.update(
+    range_name="A4",
+    values=[
+        ["CATEGORIAS DISPONÍVEIS"]
+    ]
+)
+
+if categorias:
+
+    config.update(
+        range_name=f"A5:A{4 + len(categorias)}",
+        values=[
+            [categoria]
+            for categoria in categorias
+        ]
+    )
+
+
+# =========================================================
+# DESCOBRIR ID DA CATEGORIA
+# =========================================================
+
+categoria_id = None
+
+if categoria_atual.upper() != "TODAS":
+
+    categoria_id = mapa_categorias.get(
+        categoria_atual
+    )
+
+    if categoria_id is None:
+
+        raise Exception(
+            f"Categoria '{categoria_atual}' "
+            "não encontrada no feed."
+        )
+
+
+# =========================================================
+# DETECTAR TROCA DE CATEGORIA
+# =========================================================
+
 if not categoria_anterior:
 
     dados_atuais = aba.get_all_values()
 
-    if len(dados_atuais) > 1 and len(dados_atuais[1]) >= 9:
-        categoria_anterior = dados_atuais[1][8].strip()
+    if (
+        len(dados_atuais) > 1
+        and
+        len(dados_atuais[1]) >= 9
+    ):
 
+        categoria_anterior = (
+            dados_atuais[1][8]
+            .strip()
+        )
 
-# ===== SE TROCOU CATEGORIA, LIMPAR OFERTAS =====
 
 trocou_categoria = (
     categoria_anterior
-    and categoria_atual.lower() != categoria_anterior.lower()
+    and
+    categoria_atual.lower()
+    != categoria_anterior.lower()
 )
+
 
 if trocou_categoria:
 
     if aba.row_count > 1:
+
         aba.batch_clear([
             f"A2:N{aba.row_count}"
         ])
 
     print(
         f"Categoria alterada: "
-        f"{categoria_anterior} → {categoria_atual}"
+        f"{categoria_anterior} → "
+        f"{categoria_atual}"
     )
 
 
 config.update(
     range_name="B3",
-    values=[[categoria_atual]]
+    values=[
+        [categoria_atual]
+    ]
 )
 
 
-# ===== FILTRAR CATEGORIA =====
+# =========================================================
+# LER PRODUTOS EXISTENTES
+# =========================================================
 
-df_categoria = df.copy()
-
-if categoria_atual.upper() != "TODAS":
-
-    df_categoria = df_categoria[
-        df_categoria["global_category1"]
-        .astype(str)
-        .str.strip()
-        .str.lower()
-        ==
-        categoria_atual.lower()
-    ]
-
-
-# ===== LER PRODUTOS QUE JÁ ESTÃO NA PLANILHA =====
-
-dados = aba.get_all_values()
+dados_planilha = (
+    aba.get_all_values()
+)
 
 produtos_existentes = {}
 
-for numero_linha, linha in enumerate(dados[1:], start=2):
+
+for numero_linha, linha in enumerate(
+    dados_planilha[1:],
+    start=2
+):
 
     if not linha:
         continue
 
-    item_id = str(linha[0]).strip()
+    item_id = str(
+        linha[0]
+    ).strip()
 
     if item_id:
-        produtos_existentes[item_id] = {
+
+        produtos_existentes[
+            item_id
+        ] = {
             "linha": numero_linha,
             "dados": linha
         }
 
 
-# ===== ATUALIZAR PRODUTOS COM PREÇO ALTERADO =====
+# =========================================================
+# ATUALIZAR PRODUTOS EXISTENTES
+# =========================================================
 
 atualizacoes = []
 
-feed_por_id = {
-    str(produto["itemid"]): produto
-    for _, produto in df_categoria.iterrows()
-}
 
 for item_id, existente in produtos_existentes.items():
 
-    if item_id not in feed_por_id:
+    produto = buscar_produto_por_id(
+        item_id
+    )
+
+    if not produto:
         continue
 
-    produto = feed_por_id[item_id]
+    linha_antiga = (
+        existente["dados"]
+    )
 
-    linha_antiga = existente["dados"]
-
-    preco_antigo_planilha = (
+    preco_planilha = (
         numero(linha_antiga[3])
         if len(linha_antiga) > 3
         else 0
     )
 
-    preco_novo = numero(
-        produto["sale_price"]
+    preco_api = float(
+        produto.get("priceMin")
+        or 0
     )
-
-    # Se preço não mudou, não faz nada
-    if preco_antigo_planilha == preco_novo:
-        continue
 
     link_afiliado = (
         linha_antiga[10].strip()
@@ -253,41 +573,95 @@ for item_id, existente in produtos_existentes.items():
         else ""
     )
 
-    status = (
-        linha_antiga[12].strip()
-        if len(linha_antiga) > 12
-        else "AGUARDANDO LINK"
+
+    # Se já tem link e preço não mudou,
+    # não faz nada
+
+    if (
+        round(preco_planilha, 2)
+        ==
+        round(preco_api, 2)
+        and
+        link_afiliado
+    ):
+
+        continue
+
+
+    # Se não tem link, gerar automaticamente
+
+    if not link_afiliado:
+
+        link_afiliado = (
+            gerar_link_afiliado(
+                produto["productLink"]
+            )
+        )
+
+
+    desconto = float(
+        produto.get(
+            "priceDiscountRate"
+        ) or 0
     )
+
+    preco_anterior = (
+        calcular_preco_original(
+            preco_api,
+            desconto
+        )
+    )
+
 
     legenda = gerar_legenda(
         produto,
         link_afiliado
     )
 
+
     nova_linha = [[
-        item_id,
+
+        str(produto["itemId"]),
         "Shopee",
-        produto["title"],
-        produto["sale_price"],
-        produto["price"],
-        produto["discount_percentage"],
-        produto["item_rating"],
-        "",
-        produto["global_category1"],
-        produto["product_link"],
+        produto["productName"],
+        preco_api,
+        preco_anterior,
+        desconto,
+        float(
+            produto.get(
+                "ratingStar"
+            ) or 0
+        ),
+        int(
+            produto.get(
+                "sales"
+            ) or 0
+        ),
+        categoria_atual,
+        produto["productLink"],
         link_afiliado,
         legenda,
-        status,
+        "PRONTO",
         pd.Timestamp.now().strftime(
             "%d/%m/%Y %H:%M"
         )
+
     ]]
 
+
     atualizacoes.append({
+
         "range":
-            f"A{existente['linha']}:N{existente['linha']}",
-        "values": nova_linha
+            f"A{existente['linha']}:"
+            f"N{existente['linha']}",
+
+        "values":
+            nova_linha
+
     })
+
+
+    time.sleep(0.15)
 
 
 if atualizacoes:
@@ -298,61 +672,192 @@ if atualizacoes:
     )
 
 
-# ===== SELECIONAR NOVAS OFERTAS =====
-
-novos = df_categoria[
-    (df_categoria["item_rating"] >= 4.8)
-    &
-    (df_categoria["discount_percentage"] >= 10)
-].copy()
+# =========================================================
+# BUSCAR 5 NOVAS MELHORES OFERTAS
+# =========================================================
 
 ids_existentes = set(
     produtos_existentes.keys()
 )
 
-novos = novos[
-    ~novos["itemid"].isin(ids_existentes)
-]
+novas_ofertas = []
 
-novos = novos.sort_values(
-    by=[
-        "discount_percentage",
-        "item_rating"
-    ],
-    ascending=[
-        False,
-        False
-    ]
-)
+pagina = 1
 
-# Até 5 novas ofertas por execução
-novos = novos.head(5)
+MAX_PAGINAS = 10
 
 
-# ===== ADICIONAR NOVOS PRODUTOS =====
+while (
+    len(novas_ofertas) < 5
+    and
+    pagina <= MAX_PAGINAS
+):
+
+    resultado = buscar_produtos(
+        categoria_id=categoria_id,
+        pagina=pagina,
+        limite=50
+    )
+
+    produtos = resultado.get(
+        "nodes",
+        []
+    )
+
+
+    if not produtos:
+        break
+
+
+    for produto in produtos:
+
+        item_id = str(
+            produto.get("itemId")
+        )
+
+        if item_id in ids_existentes:
+            continue
+
+
+        vendas = int(
+            produto.get("sales")
+            or 0
+        )
+
+        avaliacao = float(
+            produto.get("ratingStar")
+            or 0
+        )
+
+        desconto = float(
+            produto.get(
+                "priceDiscountRate"
+            )
+            or 0
+        )
+
+        comissao = float(
+            produto.get(
+                "commissionRate"
+            )
+            or 0
+        )
+
+
+        # ===== FILTROS =====
+
+        if comissao < 0.05:
+            continue
+
+        if avaliacao < 4.8:
+            continue
+
+        if vendas <= 500:
+            continue
+
+        if desconto < 10:
+            continue
+
+
+        novas_ofertas.append(
+            produto
+        )
+
+        ids_existentes.add(
+            item_id
+        )
+
+
+        if len(novas_ofertas) >= 5:
+            break
+
+
+    page_info = resultado.get(
+        "pageInfo",
+        {}
+    )
+
+    if not page_info.get(
+        "hasNextPage"
+    ):
+        break
+
+    pagina += 1
+
+
+# =========================================================
+# ADICIONAR NOVAS OFERTAS
+# =========================================================
 
 linhas_novas = []
 
-for _, produto in novos.iterrows():
+
+for produto in novas_ofertas:
+
+    preco_atual = float(
+        produto.get(
+            "priceMin"
+        ) or 0
+    )
+
+    desconto = float(
+        produto.get(
+            "priceDiscountRate"
+        ) or 0
+    )
+
+    preco_anterior = (
+        calcular_preco_original(
+            preco_atual,
+            desconto
+        )
+    )
+
+
+    link_afiliado = (
+        gerar_link_afiliado(
+            produto["productLink"]
+        )
+    )
+
+
+    legenda = gerar_legenda(
+        produto,
+        link_afiliado
+    )
+
 
     linhas_novas.append([
-        produto["itemid"],
+
+        str(produto["itemId"]),
         "Shopee",
-        produto["title"],
-        produto["sale_price"],
-        produto["price"],
-        produto["discount_percentage"],
-        produto["item_rating"],
-        "",
-        produto["global_category1"],
-        produto["product_link"],
-        "",
-        gerar_legenda(produto),
-        "AGUARDANDO LINK",
+        produto["productName"],
+        preco_atual,
+        preco_anterior,
+        desconto,
+        float(
+            produto.get(
+                "ratingStar"
+            ) or 0
+        ),
+        int(
+            produto.get(
+                "sales"
+            ) or 0
+        ),
+        categoria_atual,
+        produto["productLink"],
+        link_afiliado,
+        legenda,
+        "PRONTO",
         pd.Timestamp.now().strftime(
             "%d/%m/%Y %H:%M"
         )
+
     ])
+
+
+    time.sleep(0.15)
 
 
 if linhas_novas:
@@ -363,6 +868,24 @@ if linhas_novas:
     )
 
 
-print(f"Categoria: {categoria_atual}")
-print(f"Produtos atualizados: {len(atualizacoes)}")
-print(f"Novos produtos adicionados: {len(linhas_novas)}")
+# =========================================================
+# RESULTADO
+# =========================================================
+
+print(
+    f"Categoria: {categoria_atual}"
+)
+
+print(
+    f"Produtos atualizados: "
+    f"{len(atualizacoes)}"
+)
+
+print(
+    f"Novas ofertas: "
+    f"{len(linhas_novas)}"
+)
+
+print(
+    "Automação concluída."
+)
