@@ -145,7 +145,7 @@ def chamar_api(query):
 
 
 # =========================================================
-# BUSCAR PRODUTOS
+# CAMPOS DOS PRODUTOS
 # =========================================================
 
 CAMPOS_PRODUTO = """
@@ -163,6 +163,10 @@ imageUrl
 productCatIds
 """
 
+
+# =========================================================
+# BUSCAR PRODUTOS
+# =========================================================
 
 def buscar_produtos(
     categoria_id=None,
@@ -241,7 +245,7 @@ def buscar_produto_por_id(item_id):
 
 
 # =========================================================
-# GERAR LINK DE AFILIADO AUTOMATICAMENTE
+# GERAR LINK DE AFILIADO
 # =========================================================
 
 def gerar_link_afiliado(url_original):
@@ -276,7 +280,7 @@ def gerar_link_afiliado(url_original):
 
 
 # =========================================================
-# LEGENDA
+# GERAR LEGENDA
 # =========================================================
 
 def gerar_legenda(produto, link_afiliado):
@@ -317,7 +321,7 @@ def gerar_legenda(produto, link_afiliado):
 
 
 # =========================================================
-# CONFIG
+# CONFIG DA PLANILHA
 # =========================================================
 
 try:
@@ -356,7 +360,7 @@ categoria_anterior = (
 
 
 # =========================================================
-# FEED SOMENTE PARA CATEGORIAS
+# FEED USADO SOMENTE PARA MAPEAR CATEGORIAS
 # =========================================================
 
 feed = requests.get(
@@ -399,12 +403,12 @@ for _, linha in df_categorias.iterrows():
         linha["global_category1"]
     ).strip()
 
-    categoria_id = int(
+    categoria_id_feed = int(
         linha["global_catid1"]
     )
 
     if nome not in mapa_categorias:
-        mapa_categorias[nome] = categoria_id
+        mapa_categorias[nome] = categoria_id_feed
 
 
 categorias = sorted(
@@ -412,7 +416,9 @@ categorias = sorted(
 )
 
 
-# Atualizar lista visível na CONFIG
+# =========================================================
+# ATUALIZAR CATEGORIAS NA ABA CONFIG
+# =========================================================
 
 config.update(
     range_name="A4",
@@ -448,7 +454,7 @@ if categoria_atual.upper() != "TODAS":
 
         raise Exception(
             f"Categoria '{categoria_atual}' "
-            "não encontrada no feed."
+            "não encontrada."
         )
 
 
@@ -479,6 +485,8 @@ trocou_categoria = (
     != categoria_anterior.lower()
 )
 
+
+# Se mudou a categoria, limpa as ofertas antigas
 
 if trocou_categoria:
 
@@ -574,8 +582,8 @@ for item_id, existente in produtos_existentes.items():
     )
 
 
-    # Se já tem link e preço não mudou,
-    # não faz nada
+    # Se preço não mudou e já possui link,
+    # não altera nada
 
     if (
         round(preco_planilha, 2)
@@ -588,7 +596,8 @@ for item_id, existente in produtos_existentes.items():
         continue
 
 
-    # Se não tem link, gerar automaticamente
+    # Se ainda não possui link,
+    # gera automaticamente
 
     if not link_afiliado:
 
@@ -673,25 +682,21 @@ if atualizacoes:
 
 
 # =========================================================
-# BUSCAR 5 NOVAS MELHORES OFERTAS
+# BUSCAR E RANQUEAR AS MELHORES OFERTAS
 # =========================================================
 
 ids_existentes = set(
     produtos_existentes.keys()
 )
 
-novas_ofertas = []
+candidatos = []
 
 pagina = 1
 
 MAX_PAGINAS = 10
 
 
-while (
-    len(novas_ofertas) < 5
-    and
-    pagina <= MAX_PAGINAS
-):
+while pagina <= MAX_PAGINAS:
 
     resultado = buscar_produtos(
         categoria_id=categoria_id,
@@ -744,32 +749,57 @@ while (
         )
 
 
-        # ===== FILTROS =====
+        # =================================================
+        # FILTROS
+        # =================================================
 
+        # Comissão mínima: 5%
         if comissao < 0.05:
             continue
 
+        # Avaliação mínima: 4.8
         if avaliacao < 4.8:
             continue
 
+        # Mais de 500 vendas
         if vendas <= 500:
             continue
 
+        # Desconto mínimo: 10%
         if desconto < 10:
             continue
 
 
-        novas_ofertas.append(
+        # =================================================
+        # PONTUAÇÃO
+        # =================================================
+
+        comissao_percentual = (
+            comissao * 100
+        )
+
+
+        # Comissão tem maior peso.
+        # Vendas comprovam procura.
+        # Desconto aumenta atratividade.
+        # Avaliação aumenta confiança.
+
+        score = (
+            (comissao_percentual * 3)
+            +
+            (min(vendas, 10000) / 100)
+            +
+            desconto
+            +
+            (avaliacao * 5)
+        )
+
+
+        produto["_score"] = score
+
+        candidatos.append(
             produto
         )
-
-        ids_existentes.add(
-            item_id
-        )
-
-
-        if len(novas_ofertas) >= 5:
-            break
 
 
     page_info = resultado.get(
@@ -777,12 +807,29 @@ while (
         {}
     )
 
+
     if not page_info.get(
         "hasNextPage"
     ):
         break
 
+
     pagina += 1
+
+
+# =========================================================
+# RANQUEAR CANDIDATOS
+# =========================================================
+
+candidatos = sorted(
+    candidatos,
+    key=lambda produto: produto["_score"],
+    reverse=True
+)
+
+
+# Somente as 5 melhores ofertas
+novas_ofertas = candidatos[:5]
 
 
 # =========================================================
@@ -813,6 +860,8 @@ for produto in novas_ofertas:
         )
     )
 
+
+    # Gerar link afiliado automaticamente
 
     link_afiliado = (
         gerar_link_afiliado(
@@ -877,15 +926,20 @@ print(
 )
 
 print(
+    f"Produtos analisados para ranking: "
+    f"{len(candidatos)}"
+)
+
+print(
     f"Produtos atualizados: "
     f"{len(atualizacoes)}"
 )
 
 print(
-    f"Novas ofertas: "
+    f"Novas ofertas adicionadas: "
     f"{len(linhas_novas)}"
 )
 
 print(
-    "Automação concluída."
+    "Automação concluída com sucesso."
 )
