@@ -29,5 +29,7 @@ jobs:
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SHOPEE_FEED_URL: ${{ secrets.SHOPEE_FEED_URL }}
+          SHOPEE_APP_ID: ${{ secrets.SHOPEE_APP_ID }}
+          SHOPEE_API_PASSWORD: ${{ secrets.SHOPEE_API_PASSWORD }}
         run: |
           python main.py
