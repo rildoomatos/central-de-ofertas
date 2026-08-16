@@ -2,6 +2,8 @@ import json
 import os
 import time
 import hashlib
+from urllib.parse import quote
+
 import pandas as pd
 import requests
 import gspread
@@ -42,11 +44,11 @@ aba = planilha.worksheet("OFERTAS")
 
 
 # =========================================================
-# GARANTIR AS 18 COLUNAS
+# GARANTIR AS 19 COLUNAS
 # =========================================================
 
-if aba.col_count < 18:
-    aba.resize(cols=18)
+if aba.col_count < 19:
+    aba.resize(cols=19)
 
 
 # =========================================================
@@ -71,11 +73,12 @@ cabecalhos = [[
     "Imagem",
     "Comissão %",
     "Comissão estimada",
-    "Pontuação"
+    "Pontuação",
+    "Enviar WhatsApp"
 ]]
 
 aba.update(
-    range_name="A1:R1",
+    range_name="A1:S1",
     values=cabecalhos
 )
 
@@ -86,6 +89,7 @@ aba.update(
 
 def numero(valor):
     try:
+
         texto = (
             str(valor)
             .replace("R$", "")
@@ -107,6 +111,7 @@ def numero(valor):
 
 def moeda(valor):
     try:
+
         valor = float(valor)
 
         return (
@@ -235,6 +240,26 @@ def formula_imagem(url):
     )
 
     return f'=IMAGE("{url}")'
+
+
+def formula_whatsapp(legenda):
+
+    if not legenda:
+        return ""
+
+    texto_codificado = quote(
+        str(legenda),
+        safe=""
+    )
+
+    url = (
+        "https://wa.me/"
+        f"?text={texto_codificado}"
+    )
+
+    return (
+        f'=HYPERLINK("{url}","ENVIAR")'
+    )
 
 
 # =========================================================
@@ -513,12 +538,10 @@ try:
 
 except gspread.WorksheetNotFound:
 
-    config = (
-        planilha.add_worksheet(
-            title="CONFIG",
-            rows=200,
-            cols=2
-        )
+    config = planilha.add_worksheet(
+        title="CONFIG",
+        rows=200,
+        cols=2
     )
 
     config.update(
@@ -606,10 +629,7 @@ for _, linha in (
         ]
     )
 
-    if (
-        nome
-        not in mapa_categorias
-    ):
+    if nome not in mapa_categorias:
 
         mapa_categorias[
             nome
@@ -713,7 +733,7 @@ if trocou_categoria:
     if aba.row_count > 1:
 
         aba.batch_clear([
-            f"A2:R{aba.row_count}"
+            f"A2:S{aba.row_count}"
         ])
 
     print(
@@ -814,7 +834,12 @@ for item_id, existente in (
     )
 
 
-    if not link_afiliado:
+    link_estava_ausente = (
+        not link_afiliado
+    )
+
+
+    if link_estava_ausente:
 
         link_afiliado = (
             gerar_link_afiliado(
@@ -887,14 +912,25 @@ for item_id, existente in (
     )
 
 
-    # Se o preço mudou,
-    # atualiza a linha completa.
+    # =====================================================
+    # PREÇO MUDOU OU LINK ESTAVA AUSENTE
+    # =====================================================
 
-    if preco_mudou:
+    if (
+        preco_mudou
+        or
+        link_estava_ausente
+    ):
 
         legenda = gerar_legenda(
             produto,
             link_afiliado
+        )
+
+        enviar_whatsapp = (
+            formula_whatsapp(
+                legenda
+            )
         )
 
         nova_linha = [[
@@ -951,7 +987,9 @@ for item_id, existente in (
 
             comissao_estimada,
 
-            score
+            score,
+
+            enviar_whatsapp
 
         ]]
 
@@ -959,29 +997,59 @@ for item_id, existente in (
         atualizacoes.append({
             "range":
                 f"A{existente['linha']}:"
-                f"R{existente['linha']}",
+                f"S{existente['linha']}",
 
             "values":
                 nova_linha
         })
 
 
-    # Se o preço não mudou,
-    # apenas preenche/atualiza
-    # imagem, comissão e pontuação.
+    # =====================================================
+    # PREÇO NÃO MUDOU
+    # =====================================================
 
     else:
+
+        legenda_existente = (
+            linha_antiga[11]
+            if len(linha_antiga) > 11
+            else ""
+        )
+
+        if not legenda_existente:
+
+            legenda_existente = (
+                gerar_legenda(
+                    produto,
+                    link_afiliado
+                )
+            )
+
+
+        enviar_whatsapp = (
+            formula_whatsapp(
+                legenda_existente
+            )
+        )
+
 
         atualizacoes.append({
             "range":
                 f"O{existente['linha']}:"
-                f"R{existente['linha']}",
+                f"S{existente['linha']}",
 
             "values": [[
+
                 imagem,
+
                 comissao_percentual,
+
                 comissao_estimada,
-                score
+
+                score,
+
+                enviar_whatsapp
+
             ]]
         })
 
@@ -1089,9 +1157,9 @@ while (
         )
 
 
-        # =============================
+        # =================================================
         # FILTROS
-        # =============================
+        # =================================================
 
         if comissao < 0.05:
             continue
@@ -1105,10 +1173,6 @@ while (
         if desconto < 10:
             continue
 
-
-        # =============================
-        # PONTUAÇÃO
-        # =============================
 
         produto["_score"] = (
             calcular_score(
@@ -1235,6 +1299,13 @@ for produto in novas_ofertas:
     )
 
 
+    enviar_whatsapp = (
+        formula_whatsapp(
+            legenda
+        )
+    )
+
+
     linhas_novas.append([
 
         str(
@@ -1289,7 +1360,9 @@ for produto in novas_ofertas:
 
         comissao_estimada,
 
-        score
+        score,
+
+        enviar_whatsapp
 
     ])
 
