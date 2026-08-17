@@ -44,11 +44,11 @@ aba = planilha.worksheet("OFERTAS")
 
 
 # =========================================================
-# GARANTIR AS 20 COLUNAS
+# GARANTIR AS 21 COLUNAS
 # =========================================================
 
-if aba.col_count < 20:
-    aba.resize(cols=20)
+if aba.col_count < 21:
+    aba.resize(cols=21)
 
 
 # =========================================================
@@ -75,11 +75,12 @@ cabecalhos = [[
     "Comissão estimada",
     "Pontuação",
     "Enviar WhatsApp",
-    "Texto Status"
+    "Texto Status",
+    "Abrir Imagem"
 ]]
 
 aba.update(
-    range_name="A1:T1",
+    range_name="A1:U1",
     values=cabecalhos
 )
 
@@ -89,7 +90,9 @@ aba.update(
 # =========================================================
 
 def numero(valor):
+
     try:
+
         texto = (
             str(valor)
             .replace("R$", "")
@@ -97,6 +100,7 @@ def numero(valor):
         )
 
         if "," in texto:
+
             texto = (
                 texto
                 .replace(".", "")
@@ -106,11 +110,14 @@ def numero(valor):
         return float(texto)
 
     except:
+
         return 0.0
 
 
 def moeda(valor):
+
     try:
+
         valor = float(valor)
 
         return (
@@ -121,6 +128,7 @@ def moeda(valor):
         )
 
     except:
+
         return str(valor)
 
 
@@ -142,6 +150,7 @@ def calcular_preco_original(
         or
         desconto >= 100
     ):
+
         return preco_atual
 
     return round(
@@ -165,12 +174,16 @@ def calcular_score(produto):
     )
 
     desconto = float(
-        produto.get("priceDiscountRate")
+        produto.get(
+            "priceDiscountRate"
+        )
         or 0
     )
 
     comissao = float(
-        produto.get("commissionRate")
+        produto.get(
+            "commissionRate"
+        )
         or 0
     )
 
@@ -197,18 +210,21 @@ def calcular_score(produto):
 def calcular_comissao(produto):
 
     try:
+
         comissao = float(
             produto.get("commission")
             or 0
         )
 
         if comissao > 0:
+
             return round(
                 comissao,
                 2
             )
 
     except:
+
         pass
 
     preco = float(
@@ -227,6 +243,10 @@ def calcular_comissao(produto):
     )
 
 
+# =========================================================
+# IMAGEM NA PLANILHA
+# =========================================================
+
 def formula_imagem(url):
 
     if not url:
@@ -238,6 +258,25 @@ def formula_imagem(url):
     )
 
     return f'=IMAGE("{url}")'
+
+
+# =========================================================
+# BOTÃO ABRIR IMAGEM
+# =========================================================
+
+def formula_abrir_imagem(url):
+
+    if not url:
+        return ""
+
+    url = str(url).replace(
+        '"',
+        ""
+    )
+
+    return (
+        f'=HYPERLINK("{url}";"ABRIR IMAGEM")'
+    )
 
 
 # =========================================================
@@ -292,13 +331,16 @@ def chamar_api(query):
     ).hexdigest()
 
     headers = {
+
         "Authorization": (
             f"SHA256 Credential={APP_ID},"
             f"Timestamp={timestamp},"
             f"Signature={signature}"
         ),
+
         "Content-Type":
             "application/json"
+
     }
 
     resposta = requests.post(
@@ -432,6 +474,7 @@ def buscar_produto_por_id(
     )
 
     if produtos:
+
         return produtos[0]
 
     return None
@@ -515,17 +558,28 @@ def gerar_legenda(
     )
 
     return (
+
         "🔥 *OFERTA NA SHOPEE!*\n\n"
+
         f"🛍️ {produto.get('productName', '')}\n\n"
+
         f"❌ De: {moeda(preco_anterior)}\n"
+
         f"✅ Por: *{moeda(preco_atual)}*\n"
+
         f"🔥 {int(desconto)}% OFF\n"
+
         f"⭐ Avaliação: {avaliacao:.1f}\n"
+
         f"🛒 +{vendas} vendidos\n\n"
+
         "👉 *Compre aqui:*\n"
+
         f"{link_afiliado}\n\n"
+
         "⚠️ Preço e disponibilidade podem "
         "mudar a qualquer momento!"
+
     )
 
 
@@ -565,13 +619,21 @@ def gerar_texto_status(
     ).strip()
 
     return (
+
         "🔥 *OFERTA SHOPEE*\n\n"
+
         f"🛍️ *{nome_produto}*\n\n"
+
         f"❌ De: {moeda(preco_anterior)}\n"
+
         f"✅ Por: *{moeda(preco_atual)}*\n"
+
         f"🔥 {int(desconto)}% OFF\n\n"
+
         "👇 *Confira aqui:*\n"
+
         f"{link_afiliado}"
+
     )
 
 
@@ -617,6 +679,7 @@ categoria_atual = (
     or "TODAS"
 ).strip()
 
+
 categoria_anterior = (
     config.acell("B3").value
     or ""
@@ -633,6 +696,7 @@ feed = requests.get(
 )
 
 feed.raise_for_status()
+
 
 with open(
     "categorias.csv",
@@ -651,6 +715,7 @@ df_categorias = pd.read_csv(
         "global_catid1"
     ]
 )
+
 
 df_categorias = (
     df_categorias
@@ -769,11 +834,15 @@ if not categoria_anterior:
 
 
 trocou_categoria = (
+
     categoria_anterior
+
     and
+
     categoria_atual.lower()
     !=
     categoria_anterior.lower()
+
 )
 
 
@@ -782,7 +851,7 @@ if trocou_categoria:
     if aba.row_count > 1:
 
         aba.batch_clear([
-            f"A2:T{aba.row_count}"
+            f"A2:U{aba.row_count}"
         ])
 
     print(
@@ -808,6 +877,7 @@ dados_planilha = (
     aba.get_all_values()
 )
 
+
 produtos_existentes = {}
 
 
@@ -828,10 +898,13 @@ for numero_linha, linha in enumerate(
         produtos_existentes[
             item_id
         ] = {
+
             "linha":
                 numero_linha,
+
             "dados":
                 linha
+
         }
 
 
@@ -862,11 +935,15 @@ for item_id, existente in (
 
 
     preco_planilha = (
+
         numero(
             linha_antiga[3]
         )
+
         if len(linha_antiga) > 3
+
         else 0
+
     )
 
 
@@ -877,9 +954,13 @@ for item_id, existente in (
 
 
     link_afiliado = (
+
         linha_antiga[10].strip()
+
         if len(linha_antiga) > 10
+
         else ""
+
     )
 
 
@@ -888,14 +969,22 @@ for item_id, existente in (
     # =====================================================
 
     status_atual = (
+
         linha_antiga[12].strip()
+
         if len(linha_antiga) > 12
+
         else ""
+
     )
 
+
     if status_atual.upper() == "ENVIADO":
+
         status_final = "ENVIADO"
+
     else:
+
         status_final = "PRONTO"
 
 
@@ -956,10 +1045,24 @@ for item_id, existente in (
     )
 
 
-    imagem = formula_imagem(
+    image_url = (
         produto.get(
             "imageUrl",
             ""
+        )
+    )
+
+
+    imagem = (
+        formula_imagem(
+            image_url
+        )
+    )
+
+
+    abrir_imagem = (
+        formula_abrir_imagem(
+            image_url
         )
     )
 
@@ -973,15 +1076,19 @@ for item_id, existente in (
 
 
     preco_mudou = (
+
         round(
             preco_planilha,
             2
         )
+
         !=
+
         round(
             preco_api,
             2
         )
+
     )
 
 
@@ -1000,11 +1107,13 @@ for item_id, existente in (
             link_afiliado
         )
 
+
         enviar_whatsapp = (
             formula_whatsapp(
                 legenda
             )
         )
+
 
         nova_linha = [[
 
@@ -1064,18 +1173,22 @@ for item_id, existente in (
 
             enviar_whatsapp,
 
-            texto_status
+            texto_status,
+
+            abrir_imagem
 
         ]]
 
 
         atualizacoes.append({
+
             "range":
                 f"A{existente['linha']}:"
-                f"T{existente['linha']}",
+                f"U{existente['linha']}",
 
             "values":
                 nova_linha
+
         })
 
 
@@ -1086,10 +1199,15 @@ for item_id, existente in (
     else:
 
         legenda_existente = (
+
             linha_antiga[11]
+
             if len(linha_antiga) > 11
+
             else ""
+
         )
+
 
         if not legenda_existente:
 
@@ -1109,9 +1227,10 @@ for item_id, existente in (
 
 
         atualizacoes.append({
+
             "range":
                 f"O{existente['linha']}:"
-                f"T{existente['linha']}",
+                f"U{existente['linha']}",
 
             "values": [[
 
@@ -1125,9 +1244,12 @@ for item_id, existente in (
 
                 enviar_whatsapp,
 
-                texto_status
+                texto_status,
+
+                abrir_imagem
 
             ]]
+
         })
 
 
@@ -1153,6 +1275,7 @@ ids_existentes = set(
     produtos_existentes.keys()
 )
 
+
 candidatos = []
 
 pagina = 1
@@ -1166,12 +1289,16 @@ while (
 
     resultado = (
         buscar_produtos(
+
             categoria_id=
                 categoria_id,
+
             pagina=
                 pagina,
+
             limite=
                 50
+
         )
     )
 
@@ -1183,6 +1310,7 @@ while (
 
 
     if not produtos:
+
         break
 
 
@@ -1199,6 +1327,7 @@ while (
             item_id
             in ids_existentes
         ):
+
             continue
 
 
@@ -1239,15 +1368,22 @@ while (
         # =================================================
 
         if comissao < 0.05:
+
             continue
+
 
         if avaliacao < 4.8:
+
             continue
+
 
         if vendas <= 500:
+
             continue
 
+
         if desconto < 10:
+
             continue
 
 
@@ -1256,6 +1392,7 @@ while (
                 produto
             )
         )
+
 
         candidatos.append(
             produto
@@ -1271,6 +1408,7 @@ while (
     if not page_info.get(
         "hasNextPage"
     ):
+
         break
 
 
@@ -1282,10 +1420,14 @@ while (
 # =========================================================
 
 candidatos = sorted(
+
     candidatos,
+
     key=lambda produto:
         produto["_score"],
+
     reverse=True
+
 )
 
 
@@ -1375,10 +1517,24 @@ for produto in novas_ofertas:
     )
 
 
-    imagem = formula_imagem(
+    image_url = (
         produto.get(
             "imageUrl",
             ""
+        )
+    )
+
+
+    imagem = (
+        formula_imagem(
+            image_url
+        )
+    )
+
+
+    abrir_imagem = (
+        formula_abrir_imagem(
+            image_url
         )
     )
 
@@ -1448,7 +1604,9 @@ for produto in novas_ofertas:
 
         enviar_whatsapp,
 
-        texto_status
+        texto_status,
+
+        abrir_imagem
 
     ])
 
@@ -1476,22 +1634,26 @@ print(
     f"{categoria_atual}"
 )
 
+
 print(
     f"Produtos analisados "
     f"para ranking: "
     f"{len(candidatos)}"
 )
 
+
 print(
     f"Produtos atualizados: "
     f"{len(atualizacoes)}"
 )
+
 
 print(
     f"Novas ofertas "
     f"adicionadas: "
     f"{len(linhas_novas)}"
 )
+
 
 print(
     "Automação concluída "
