@@ -393,27 +393,89 @@ productCatIds
 
 def buscar_produtos(
     categoria_id=None,
+    palavra_chave="",
+    marca="",
     pagina=1,
     limite=50
 ):
 
-    filtro_categoria = ""
+    filtros = [
+        "listType:0"
+    ]
 
     if categoria_id:
 
-        filtro_categoria = (
-            f"productCatId:"
-            f"{int(categoria_id)}"
+        filtros.append(
+            f"productCatId:{int(categoria_id)}"
         )
+
+
+    # =====================================================
+    # TERMO DE BUSCA
+    # =====================================================
+
+    termos = []
+
+    if palavra_chave.strip():
+
+        termos.append(
+            palavra_chave.strip()
+        )
+
+    if marca.strip():
+
+        termos.append(
+            marca.strip()
+        )
+
+
+    termo_busca = " ".join(
+        termos
+    ).strip()
+
+
+    if termo_busca:
+
+        termo_graphql = json.dumps(
+            termo_busca,
+            ensure_ascii=False
+        )
+
+        filtros.append(
+            f"keyword:{termo_graphql}"
+        )
+
+        # Com palavra-chave usamos relevância
+        filtros.append(
+            "sortType:1"
+        )
+
+    else:
+
+        # Sem palavra-chave buscamos pelos mais vendidos
+        filtros.append(
+            "sortType:2"
+        )
+
+
+    filtros.append(
+        f"page:{pagina}"
+    )
+
+    filtros.append(
+        f"limit:{limite}"
+    )
+
+
+    argumentos = "\n".join(
+        filtros
+    )
+
 
     query = f"""
     {{
       productOfferV2(
-        listType:0
-        {filtro_categoria}
-        sortType:2
-        page:{pagina}
-        limit:{limite}
+        {argumentos}
       ) {{
         nodes {{
           {CAMPOS_PRODUTO}
@@ -426,6 +488,7 @@ def buscar_produtos(
       }}
     }}
     """
+
 
     dados = chamar_api(
         query
@@ -651,28 +714,88 @@ except gspread.WorksheetNotFound:
 
     config = planilha.add_worksheet(
         title="CONFIG",
-        rows=200,
+        rows=300,
         cols=2
     )
 
-    config.update(
-        range_name="A1:B3",
-        values=[
-            [
-                "CONFIGURAÇÃO",
-                "VALOR"
-            ],
-            [
-                "Categoria",
-                "TODAS"
-            ],
-            [
-                "Categoria anterior",
-                ""
-            ]
-        ]
+
+# =========================================================
+# MIGRAR CONFIG ANTIGA
+# =========================================================
+
+categoria_existente = (
+    config.acell("B2").value
+    or "TODAS"
+).strip()
+
+
+rotulo_antigo_a3 = (
+    config.acell("A3").value
+    or ""
+).strip()
+
+
+valor_antigo_b3 = (
+    config.acell("B3").value
+    or ""
+).strip()
+
+
+busca_anterior_existente = (
+    config.acell("B5").value
+    or ""
+).strip()
+
+
+# Se ainda estiver usando o formato antigo,
+# B3 era "Categoria anterior".
+
+if (
+    rotulo_antigo_a3.lower()
+    == "categoria anterior"
+    and
+    not busca_anterior_existente
+):
+
+    busca_anterior_existente = (
+        valor_antigo_b3
     )
 
+
+# =========================================================
+# NOVO LAYOUT DA CONFIG
+# =========================================================
+
+config.update(
+    range_name="A1:B5",
+    values=[
+        [
+            "CONFIGURAÇÃO",
+            "VALOR"
+        ],
+        [
+            "Categoria",
+            categoria_existente
+        ],
+        [
+            "Palavra-chave",
+            ""
+        ],
+        [
+            "Marca",
+            ""
+        ],
+        [
+            "Busca anterior",
+            busca_anterior_existente
+        ]
+    ]
+)
+
+
+# =========================================================
+# LER CONFIGURAÇÕES
+# =========================================================
 
 categoria_atual = (
     config.acell("B2").value
@@ -680,10 +803,29 @@ categoria_atual = (
 ).strip()
 
 
-categoria_anterior = (
+palavra_chave = (
     config.acell("B3").value
     or ""
 ).strip()
+
+
+marca = (
+    config.acell("B4").value
+    or ""
+).strip()
+
+
+busca_anterior = (
+    config.acell("B5").value
+    or ""
+).strip()
+
+
+# Categoria vazia equivale a TODAS
+
+if not categoria_atual:
+
+    categoria_atual = "TODAS"
 
 
 # =========================================================
@@ -760,7 +902,7 @@ categorias = sorted(
 # =========================================================
 
 config.update(
-    range_name="A4",
+    range_name="A7",
     values=[
         [
             "CATEGORIAS DISPONÍVEIS"
@@ -773,8 +915,8 @@ if categorias:
 
     config.update(
         range_name=(
-            f"A5:"
-            f"A{4 + len(categorias)}"
+            f"A8:"
+            f"A{7 + len(categorias)}"
         ),
         values=[
             [categoria]
@@ -812,41 +954,30 @@ if (
 
 
 # =========================================================
-# DETECTAR TROCA DE CATEGORIA
+# IDENTIFICAR BUSCA ATUAL
 # =========================================================
 
-if not categoria_anterior:
-
-    dados_atuais = (
-        aba.get_all_values()
-    )
-
-    if (
-        len(dados_atuais) > 1
-        and
-        len(dados_atuais[1]) >= 9
-    ):
-
-        categoria_anterior = (
-            dados_atuais[1][8]
-            .strip()
-        )
-
-
-trocou_categoria = (
-
-    categoria_anterior
-
-    and
-
-    categoria_atual.lower()
-    !=
-    categoria_anterior.lower()
-
+assinatura_busca = (
+    f"{categoria_atual.lower()}|"
+    f"{palavra_chave.lower()}|"
+    f"{marca.lower()}"
 )
 
 
-if trocou_categoria:
+# =========================================================
+# DETECTAR ALTERAÇÃO DA BUSCA
+# =========================================================
+
+trocou_busca = (
+    busca_anterior
+    and
+    assinatura_busca
+    !=
+    busca_anterior
+)
+
+
+if trocou_busca:
 
     if aba.row_count > 1:
 
@@ -855,16 +986,15 @@ if trocou_categoria:
         ])
 
     print(
-        f"Categoria alterada: "
-        f"{categoria_anterior} "
-        f"→ {categoria_atual}"
+        "Critérios de busca alterados. "
+        "Ofertas anteriores removidas."
     )
 
 
 config.update(
-    range_name="B3",
+    range_name="B5",
     values=[
-        [categoria_atual]
+        [assinatura_busca]
     ]
 )
 
@@ -1293,6 +1423,12 @@ while (
             categoria_id=
                 categoria_id,
 
+            palavra_chave=
+                palavra_chave,
+
+            marca=
+                marca,
+
             pagina=
                 pagina,
 
@@ -1632,6 +1768,18 @@ if linhas_novas:
 print(
     f"Categoria: "
     f"{categoria_atual}"
+)
+
+
+print(
+    f"Palavra-chave: "
+    f"{palavra_chave or 'Nenhuma'}"
+)
+
+
+print(
+    f"Marca: "
+    f"{marca or 'Nenhuma'}"
 )
 
 
