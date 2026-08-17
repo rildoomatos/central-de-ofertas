@@ -44,11 +44,11 @@ aba = planilha.worksheet("OFERTAS")
 
 
 # =========================================================
-# GARANTIR AS 19 COLUNAS
+# GARANTIR AS 20 COLUNAS
 # =========================================================
 
-if aba.col_count < 19:
-    aba.resize(cols=19)
+if aba.col_count < 20:
+    aba.resize(cols=20)
 
 
 # =========================================================
@@ -74,11 +74,12 @@ cabecalhos = [[
     "Comissão %",
     "Comissão estimada",
     "Pontuação",
-    "Enviar WhatsApp"
+    "Enviar WhatsApp",
+    "Texto Status"
 ]]
 
 aba.update(
-    range_name="A1:S1",
+    range_name="A1:T1",
     values=cabecalhos
 )
 
@@ -476,7 +477,7 @@ def gerar_link_afiliado(
 
 
 # =========================================================
-# GERAR LEGENDA
+# GERAR LEGENDA PARA GRUPO
 # =========================================================
 
 def gerar_legenda(
@@ -525,6 +526,52 @@ def gerar_legenda(
         f"{link_afiliado}\n\n"
         "⚠️ Preço e disponibilidade podem "
         "mudar a qualquer momento!"
+    )
+
+
+# =========================================================
+# GERAR TEXTO PARA STATUS
+# =========================================================
+
+def gerar_texto_status(
+    produto,
+    link_afiliado
+):
+
+    preco_atual = float(
+        produto.get("priceMin")
+        or 0
+    )
+
+    desconto = float(
+        produto.get(
+            "priceDiscountRate"
+        )
+        or 0
+    )
+
+    preco_anterior = (
+        calcular_preco_original(
+            preco_atual,
+            desconto
+        )
+    )
+
+    nome_produto = str(
+        produto.get(
+            "productName",
+            ""
+        )
+    ).strip()
+
+    return (
+        "🔥 *OFERTA SHOPEE*\n\n"
+        f"🛍️ *{nome_produto}*\n\n"
+        f"❌ De: {moeda(preco_anterior)}\n"
+        f"✅ Por: *{moeda(preco_atual)}*\n"
+        f"🔥 {int(desconto)}% OFF\n\n"
+        "👇 *Confira aqui:*\n"
+        f"{link_afiliado}"
     )
 
 
@@ -735,7 +782,7 @@ if trocou_categoria:
     if aba.row_count > 1:
 
         aba.batch_clear([
-            f"A2:S{aba.row_count}"
+            f"A2:T{aba.row_count}"
         ])
 
     print(
@@ -837,7 +884,7 @@ for item_id, existente in (
 
 
     # =====================================================
-    # PRESERVAR O STATUS ATUAL
+    # PRESERVAR STATUS
     # =====================================================
 
     status_atual = (
@@ -913,6 +960,14 @@ for item_id, existente in (
         produto.get(
             "imageUrl",
             ""
+        )
+    )
+
+
+    texto_status = (
+        gerar_texto_status(
+            produto,
+            link_afiliado
         )
     )
 
@@ -1007,7 +1062,9 @@ for item_id, existente in (
 
             score,
 
-            enviar_whatsapp
+            enviar_whatsapp,
+
+            texto_status
 
         ]]
 
@@ -1015,7 +1072,7 @@ for item_id, existente in (
         atualizacoes.append({
             "range":
                 f"A{existente['linha']}:"
-                f"S{existente['linha']}",
+                f"T{existente['linha']}",
 
             "values":
                 nova_linha
@@ -1054,7 +1111,7 @@ for item_id, existente in (
         atualizacoes.append({
             "range":
                 f"O{existente['linha']}:"
-                f"S{existente['linha']}",
+                f"T{existente['linha']}",
 
             "values": [[
 
@@ -1066,7 +1123,9 @@ for item_id, existente in (
 
                 score,
 
-                enviar_whatsapp
+                enviar_whatsapp,
+
+                texto_status
 
             ]]
         })
@@ -1230,7 +1289,6 @@ candidatos = sorted(
 )
 
 
-# Apenas as 5 melhores
 novas_ofertas = (
     candidatos[:5]
 )
@@ -1281,6 +1339,14 @@ for produto in novas_ofertas:
     legenda = gerar_legenda(
         produto,
         link_afiliado
+    )
+
+
+    texto_status = (
+        gerar_texto_status(
+            produto,
+            link_afiliado
+        )
     )
 
 
@@ -1380,7 +1446,9 @@ for produto in novas_ofertas:
 
         score,
 
-        enviar_whatsapp
+        enviar_whatsapp,
+
+        texto_status
 
     ])
 
