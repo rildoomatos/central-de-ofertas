@@ -11,7 +11,7 @@ from google.oauth2.service_account import Credentials
 
 
 # =========================================================
-# CONFIGURAÇÕES
+# CONFIGURAÇÕES GERAIS
 # =========================================================
 
 APP_ID = os.environ["SHOPEE_APP_ID"]
@@ -44,16 +44,12 @@ aba = planilha.worksheet("OFERTAS")
 
 
 # =========================================================
-# GARANTIR AS 21 COLUNAS
+# OFERTAS - GARANTIR 21 COLUNAS
 # =========================================================
 
 if aba.col_count < 21:
     aba.resize(cols=21)
 
-
-# =========================================================
-# CABEÇALHOS
-# =========================================================
 
 cabecalhos = [[
     "ID",
@@ -91,233 +87,117 @@ aba.update(
 
 TRADUCOES_CATEGORIAS = {
 
-    "women clothes":
-        "Roupas Femininas",
+    "women clothes": "Roupas Femininas",
+    "women's clothes": "Roupas Femininas",
+    "women apparel": "Roupas Femininas",
+    "women's apparel": "Roupas Femininas",
 
-    "women's clothes":
-        "Roupas Femininas",
+    "men clothes": "Roupas Masculinas",
+    "men's clothes": "Roupas Masculinas",
+    "men apparel": "Roupas Masculinas",
+    "men's apparel": "Roupas Masculinas",
 
-    "women apparel":
-        "Roupas Femininas",
+    "women shoes": "Calçados Femininos",
+    "women's shoes": "Calçados Femininos",
 
-    "women's apparel":
-        "Roupas Femininas",
+    "men shoes": "Calçados Masculinos",
+    "men's shoes": "Calçados Masculinos",
 
-    "men clothes":
-        "Roupas Masculinas",
+    "women bags": "Bolsas Femininas",
+    "women's bags": "Bolsas Femininas",
 
-    "men's clothes":
-        "Roupas Masculinas",
+    "men bags": "Bolsas Masculinas",
+    "men's bags": "Bolsas Masculinas",
 
-    "men apparel":
-        "Roupas Masculinas",
+    "fashion accessories": "Acessórios de Moda",
 
-    "men's apparel":
-        "Roupas Masculinas",
+    "watches": "Relógios",
 
-    "women shoes":
-        "Calçados Femininos",
+    "mobile & gadgets": "Celulares e Acessórios",
+    "mobile and gadgets": "Celulares e Acessórios",
+    "phones & accessories": "Celulares e Acessórios",
 
-    "women's shoes":
-        "Calçados Femininos",
+    "computers & accessories": "Computadores e Acessórios",
+    "computers and accessories": "Computadores e Acessórios",
 
-    "men shoes":
-        "Calçados Masculinos",
+    "home appliances": "Eletrodomésticos",
 
-    "men's shoes":
-        "Calçados Masculinos",
+    "home & living": "Casa e Decoração",
+    "home and living": "Casa e Decoração",
 
-    "women bags":
-        "Bolsas Femininas",
+    "home & garden": "Casa e Jardim",
+    "home and garden": "Casa e Jardim",
 
-    "women's bags":
-        "Bolsas Femininas",
+    "kitchenware": "Cozinha",
 
-    "men bags":
-        "Bolsas Masculinas",
+    "beauty & personal care": "Beleza e Cuidados Pessoais",
+    "beauty and personal care": "Beleza e Cuidados Pessoais",
+    "beauty": "Beleza",
 
-    "men's bags":
-        "Bolsas Masculinas",
+    "health": "Saúde",
+    "health & personal care": "Saúde e Cuidados Pessoais",
 
-    "fashion accessories":
-        "Acessórios de Moda",
+    "mom & baby": "Mamãe e Bebê",
+    "mom and baby": "Mamãe e Bebê",
 
-    "watches":
-        "Relógios",
+    "babies & kids": "Bebês e Crianças",
+    "babies and kids": "Bebês e Crianças",
+    "baby & kids": "Bebês e Crianças",
 
-    "mobile & gadgets":
-        "Celulares e Acessórios",
+    "toys": "Brinquedos",
+    "toys & games": "Brinquedos e Jogos",
+    "toys and games": "Brinquedos e Jogos",
 
-    "mobile and gadgets":
-        "Celulares e Acessórios",
+    "sports & outdoors": "Esportes e Lazer",
+    "sports and outdoors": "Esportes e Lazer",
+    "sports": "Esportes",
 
-    "phones & accessories":
-        "Celulares e Acessórios",
+    "hobbies & collections": "Hobbies e Colecionáveis",
+    "hobbies and collections": "Hobbies e Colecionáveis",
 
-    "computers & accessories":
-        "Computadores e Acessórios",
+    "gaming & consoles": "Games e Consoles",
+    "gaming and consoles": "Games e Consoles",
+    "games & consoles": "Games e Consoles",
 
-    "computers and accessories":
-        "Computadores e Acessórios",
+    "cameras & drones": "Câmeras e Drones",
+    "cameras and drones": "Câmeras e Drones",
 
-    "home appliances":
-        "Eletrodomésticos",
+    "audio": "Áudio",
 
-    "home & living":
-        "Casa e Decoração",
+    "food & beverages": "Alimentos e Bebidas",
+    "food and beverages": "Alimentos e Bebidas",
 
-    "home and living":
-        "Casa e Decoração",
+    "groceries": "Mercado",
 
-    "home & garden":
-        "Casa e Jardim",
+    "pets": "Produtos para Pets",
+    "pet supplies": "Produtos para Pets",
 
-    "home and garden":
-        "Casa e Jardim",
+    "automotive": "Automotivo",
+    "automobiles": "Automotivo",
 
-    "kitchenware":
-        "Cozinha",
+    "motorcycles": "Motos",
+    "motorcycle": "Motos",
 
-    "beauty & personal care":
-        "Beleza e Cuidados Pessoais",
+    "books & magazines": "Livros e Revistas",
+    "books and magazines": "Livros e Revistas",
+    "books": "Livros",
 
-    "beauty and personal care":
-        "Beleza e Cuidados Pessoais",
+    "stationery": "Papelaria",
 
-    "beauty":
-        "Beleza",
+    "office & stationery": "Escritório e Papelaria",
+    "office and stationery": "Escritório e Papelaria",
 
-    "health":
-        "Saúde",
+    "travel & luggage": "Viagem e Bagagem",
+    "travel and luggage": "Viagem e Bagagem",
 
-    "health & personal care":
-        "Saúde e Cuidados Pessoais",
+    "tickets & vouchers": "Ingressos e Vouchers",
+    "tickets and vouchers": "Ingressos e Vouchers",
 
-    "mom & baby":
-        "Mamãe e Bebê",
+    "electronics": "Eletrônicos",
+    "consumer electronics": "Eletrônicos",
 
-    "mom and baby":
-        "Mamãe e Bebê",
-
-    "babies & kids":
-        "Bebês e Crianças",
-
-    "babies and kids":
-        "Bebês e Crianças",
-
-    "baby & kids":
-        "Bebês e Crianças",
-
-    "toys":
-        "Brinquedos",
-
-    "toys & games":
-        "Brinquedos e Jogos",
-
-    "toys and games":
-        "Brinquedos e Jogos",
-
-    "sports & outdoors":
-        "Esportes e Lazer",
-
-    "sports and outdoors":
-        "Esportes e Lazer",
-
-    "sports":
-        "Esportes",
-
-    "hobbies & collections":
-        "Hobbies e Colecionáveis",
-
-    "hobbies and collections":
-        "Hobbies e Colecionáveis",
-
-    "gaming & consoles":
-        "Games e Consoles",
-
-    "gaming and consoles":
-        "Games e Consoles",
-
-    "games & consoles":
-        "Games e Consoles",
-
-    "cameras & drones":
-        "Câmeras e Drones",
-
-    "cameras and drones":
-        "Câmeras e Drones",
-
-    "audio":
-        "Áudio",
-
-    "food & beverages":
-        "Alimentos e Bebidas",
-
-    "food and beverages":
-        "Alimentos e Bebidas",
-
-    "groceries":
-        "Mercado",
-
-    "pets":
-        "Produtos para Pets",
-
-    "pet supplies":
-        "Produtos para Pets",
-
-    "automotive":
-        "Automotivo",
-
-    "automobiles":
-        "Automotivo",
-
-    "motorcycles":
-        "Motos",
-
-    "motorcycle":
-        "Motos",
-
-    "books & magazines":
-        "Livros e Revistas",
-
-    "books and magazines":
-        "Livros e Revistas",
-
-    "books":
-        "Livros",
-
-    "stationery":
-        "Papelaria",
-
-    "office & stationery":
-        "Escritório e Papelaria",
-
-    "office and stationery":
-        "Escritório e Papelaria",
-
-    "travel & luggage":
-        "Viagem e Bagagem",
-
-    "travel and luggage":
-        "Viagem e Bagagem",
-
-    "tickets & vouchers":
-        "Ingressos e Vouchers",
-
-    "tickets and vouchers":
-        "Ingressos e Vouchers",
-
-    "electronics":
-        "Eletrônicos",
-
-    "consumer electronics":
-        "Eletrônicos",
-
-    "tools & home improvement":
-        "Ferramentas e Construção",
-
-    "tools and home improvement":
-        "Ferramentas e Construção"
+    "tools & home improvement": "Ferramentas e Construção",
+    "tools and home improvement": "Ferramentas e Construção"
 }
 
 
@@ -325,10 +205,8 @@ def traduzir_categoria(nome):
 
     nome = str(nome).strip()
 
-    chave = nome.lower()
-
     return TRADUCOES_CATEGORIAS.get(
-        chave,
+        nome.lower(),
         nome
     )
 
@@ -344,6 +222,7 @@ def numero(valor):
         texto = (
             str(valor)
             .replace("R$", "")
+            .replace("%", "")
             .strip()
         )
 
@@ -385,25 +264,14 @@ def calcular_preco_original(
     desconto
 ):
 
-    preco_atual = float(
-        preco_atual
-    )
+    preco_atual = float(preco_atual)
+    desconto = float(desconto)
 
-    desconto = float(
-        desconto
-    )
-
-    if (
-        desconto <= 0
-        or
-        desconto >= 100
-    ):
-
+    if desconto <= 0 or desconto >= 100:
         return preco_atual
 
     return round(
-        preco_atual /
-        (1 - desconto / 100),
+        preco_atual / (1 - desconto / 100),
         2
     )
 
@@ -444,10 +312,7 @@ def calcular_score(produto):
         (avaliacao * 5)
     )
 
-    return round(
-        score,
-        2
-    )
+    return round(score, 2)
 
 
 def calcular_comissao(produto):
@@ -460,14 +325,9 @@ def calcular_comissao(produto):
         )
 
         if comissao > 0:
-
-            return round(
-                comissao,
-                2
-            )
+            return round(comissao, 2)
 
     except:
-
         pass
 
     preco = float(
@@ -491,10 +351,7 @@ def formula_imagem(url):
     if not url:
         return ""
 
-    url = str(url).replace(
-        '"',
-        ""
-    )
+    url = str(url).replace('"', "")
 
     return f'=IMAGE("{url}")'
 
@@ -504,10 +361,7 @@ def formula_abrir_imagem(url):
     if not url:
         return ""
 
-    url = str(url).replace(
-        '"',
-        ""
-    )
+    url = str(url).replace('"', "")
 
     return (
         f'=HYPERLINK("{url}";"ABRIR IMAGEM")'
@@ -562,16 +416,12 @@ def chamar_api(query):
     ).hexdigest()
 
     headers = {
-
         "Authorization": (
             f"SHA256 Credential={APP_ID},"
             f"Timestamp={timestamp},"
             f"Signature={signature}"
         ),
-
-        "Content-Type":
-            "application/json"
-
+        "Content-Type": "application/json"
     }
 
     resposta = requests.post(
@@ -599,7 +449,7 @@ def chamar_api(query):
 
 
 # =========================================================
-# CAMPOS DOS PRODUTOS
+# CAMPOS DA API
 # =========================================================
 
 CAMPOS_PRODUTO = """
@@ -644,13 +494,11 @@ def buscar_produtos(
     termos = []
 
     if palavra_chave.strip():
-
         termos.append(
             palavra_chave.strip()
         )
 
     if marca.strip():
-
         termos.append(
             marca.strip()
         )
@@ -672,12 +520,14 @@ def buscar_produtos(
             f"keyword:{termo_graphql}"
         )
 
+        # Relevância quando existe palavra-chave
         filtros.append(
             "sortType:1"
         )
 
     else:
 
+        # Mais vendidos quando não existe palavra-chave
         filtros.append(
             "sortType:2"
         )
@@ -715,9 +565,7 @@ def buscar_produtos(
     """
 
 
-    dados = chamar_api(
-        query
-    )
+    dados = chamar_api(query)
 
     return dados.get(
         "productOfferV2",
@@ -729,9 +577,7 @@ def buscar_produtos(
 # BUSCAR PRODUTO PELO ID
 # =========================================================
 
-def buscar_produto_por_id(
-    item_id
-):
+def buscar_produto_por_id(item_id):
 
     query = f"""
     {{
@@ -747,9 +593,7 @@ def buscar_produto_por_id(
     }}
     """
 
-    dados = chamar_api(
-        query
-    )
+    dados = chamar_api(query)
 
     resultado = dados.get(
         "productOfferV2",
@@ -762,7 +606,6 @@ def buscar_produto_por_id(
     )
 
     if produtos:
-
         return produtos[0]
 
     return None
@@ -772,9 +615,7 @@ def buscar_produto_por_id(
 # GERAR LINK AFILIADO
 # =========================================================
 
-def gerar_link_afiliado(
-    url_original
-):
+def gerar_link_afiliado(url_original):
 
     url_segura = json.dumps(
         str(url_original)
@@ -792,9 +633,7 @@ def gerar_link_afiliado(
     }}
     """
 
-    dados = chamar_api(
-        query
-    )
+    dados = chamar_api(query)
 
     resultado = dados.get(
         "generateShortLink",
@@ -808,7 +647,7 @@ def gerar_link_afiliado(
 
 
 # =========================================================
-# LEGENDA WHATSAPP
+# LEGENDA PARA GRUPO
 # =========================================================
 
 def gerar_legenda(
@@ -844,33 +683,22 @@ def gerar_legenda(
     )
 
     return (
-
         "🔥 *OFERTA NA SHOPEE!*\n\n"
-
         f"🛍️ {produto.get('productName', '')}\n\n"
-
         f"❌ De: {moeda(preco_anterior)}\n"
-
         f"✅ Por: *{moeda(preco_atual)}*\n"
-
         f"🔥 {int(desconto)}% OFF\n"
-
         f"⭐ Avaliação: {avaliacao:.1f}\n"
-
         f"🛒 +{vendas} vendidos\n\n"
-
         "👉 *Compre aqui:*\n"
-
         f"{link_afiliado}\n\n"
-
         "⚠️ Preço e disponibilidade podem "
         "mudar a qualquer momento!"
-
     )
 
 
 # =========================================================
-# TEXTO STATUS
+# TEXTO PARA STATUS
 # =========================================================
 
 def gerar_texto_status(
@@ -903,21 +731,13 @@ def gerar_texto_status(
     ).strip()
 
     return (
-
         "🔥 *OFERTA SHOPEE*\n\n"
-
         f"🛍️ *{nome_produto}*\n\n"
-
         f"❌ De: {moeda(preco_anterior)}\n"
-
         f"✅ Por: *{moeda(preco_atual)}*\n"
-
         f"🔥 {int(desconto)}% OFF\n\n"
-
         "👇 *Confira aqui:*\n"
-
         f"{link_afiliado}"
-
     )
 
 
@@ -936,34 +756,18 @@ except gspread.WorksheetNotFound:
     config = planilha.add_worksheet(
         title="CONFIG",
         rows=300,
-        cols=2
+        cols=5
     )
 
 
+# Garantir colunas A até E
+if config.col_count < 5:
+    config.resize(cols=5)
+
+
 # =========================================================
-# PRESERVAR VALORES DA CONFIG
+# PRESERVAR BUSCA EXISTENTE
 # =========================================================
-
-rotulo_a2 = (
-    config.acell("A2").value
-    or ""
-).strip()
-
-rotulo_a3 = (
-    config.acell("A3").value
-    or ""
-).strip()
-
-rotulo_a4 = (
-    config.acell("A4").value
-    or ""
-).strip()
-
-rotulo_a5 = (
-    config.acell("A5").value
-    or ""
-).strip()
-
 
 categoria_existente = (
     config.acell("B2").value
@@ -971,53 +775,206 @@ categoria_existente = (
 ).strip()
 
 
-if (
-    rotulo_a3.lower()
-    == "palavra-chave"
-):
-
-    palavra_existente = (
-        config.acell("B3").value
-        or ""
-    ).strip()
-
-else:
-
-    palavra_existente = ""
+palavra_existente = (
+    config.acell("B3").value
+    or ""
+).strip()
 
 
-if (
-    rotulo_a4.lower()
-    == "marca"
-):
-
-    marca_existente = (
-        config.acell("B4").value
-        or ""
-    ).strip()
-
-else:
-
-    marca_existente = ""
+marca_existente = (
+    config.acell("B4").value
+    or ""
+).strip()
 
 
-if (
-    rotulo_a5.lower()
-    == "busca anterior"
-):
-
-    busca_anterior_existente = (
-        config.acell("B5").value
-        or ""
-    ).strip()
-
-else:
-
-    busca_anterior_existente = ""
+busca_anterior_existente = (
+    config.acell("B5").value
+    or ""
+).strip()
 
 
 # =========================================================
-# FEED PARA MAPEAR CATEGORIAS
+# PRESERVAR FILTROS OU CRIAR PADRÕES
+# =========================================================
+
+comissao_existente = (
+    config.acell("E2").value
+    or "5"
+)
+
+avaliacao_existente = (
+    config.acell("E3").value
+    or "4,8"
+)
+
+vendas_existente = (
+    config.acell("E4").value
+    or "500"
+)
+
+desconto_existente = (
+    config.acell("E5").value
+    or "10"
+)
+
+preco_min_existente = (
+    config.acell("E6").value
+    or "0"
+)
+
+preco_max_existente = (
+    config.acell("E7").value
+    or "0"
+)
+
+quantidade_existente = (
+    config.acell("E8").value
+    or "5"
+)
+
+
+# =========================================================
+# MONTAR PAINEL CONFIG
+# =========================================================
+
+config.update(
+    range_name="A1:B5",
+    values=[
+        [
+            "CONFIGURAÇÃO",
+            "VALOR"
+        ],
+        [
+            "Categoria",
+            categoria_existente
+        ],
+        [
+            "Palavra-chave",
+            palavra_existente
+        ],
+        [
+            "Marca",
+            marca_existente
+        ],
+        [
+            "Busca anterior",
+            busca_anterior_existente
+        ]
+    ]
+)
+
+
+config.update(
+    range_name="D1:E8",
+    values=[
+        [
+            "FILTROS",
+            "VALOR"
+        ],
+        [
+            "Comissão mínima (%)",
+            comissao_existente
+        ],
+        [
+            "Avaliação mínima",
+            avaliacao_existente
+        ],
+        [
+            "Vendas mínimas",
+            vendas_existente
+        ],
+        [
+            "Desconto mínimo (%)",
+            desconto_existente
+        ],
+        [
+            "Preço mínimo (R$)",
+            preco_min_existente
+        ],
+        [
+            "Preço máximo (R$)",
+            preco_max_existente
+        ],
+        [
+            "Quantidade de ofertas",
+            quantidade_existente
+        ]
+    ]
+)
+
+
+# =========================================================
+# LER PAINEL
+# =========================================================
+
+categoria_atual = (
+    config.acell("B2").value
+    or "TODAS"
+).strip()
+
+palavra_chave = (
+    config.acell("B3").value
+    or ""
+).strip()
+
+marca = (
+    config.acell("B4").value
+    or ""
+).strip()
+
+busca_anterior = (
+    config.acell("B5").value
+    or ""
+).strip()
+
+
+COMISSAO_MINIMA = numero(
+    config.acell("E2").value
+)
+
+AVALIACAO_MINIMA = numero(
+    config.acell("E3").value
+)
+
+VENDAS_MINIMAS = int(
+    numero(
+        config.acell("E4").value
+    )
+)
+
+DESCONTO_MINIMO = numero(
+    config.acell("E5").value
+)
+
+PRECO_MINIMO = numero(
+    config.acell("E6").value
+)
+
+PRECO_MAXIMO = numero(
+    config.acell("E7").value
+)
+
+QUANTIDADE_OFERTAS = int(
+    numero(
+        config.acell("E8").value
+    )
+)
+
+
+# Segurança
+if QUANTIDADE_OFERTAS < 1:
+    QUANTIDADE_OFERTAS = 5
+
+if QUANTIDADE_OFERTAS > 50:
+    QUANTIDADE_OFERTAS = 50
+
+
+if not categoria_atual:
+    categoria_atual = "TODAS"
+
+
+# =========================================================
+# FEED SOMENTE PARA CATEGORIAS
 # =========================================================
 
 feed = requests.get(
@@ -1054,10 +1011,6 @@ df_categorias = (
 )
 
 
-# =========================================================
-# MAPAS DE CATEGORIA
-# =========================================================
-
 mapa_categorias = {}
 
 mapa_original_para_portugues = {}
@@ -1068,21 +1021,15 @@ for _, linha in (
 ):
 
     nome_original = str(
-        linha[
-            "global_category1"
-        ]
+        linha["global_category1"]
     ).strip()
 
     categoria_id_feed = int(
-        linha[
-            "global_catid1"
-        ]
+        linha["global_catid1"]
     )
 
-    nome_portugues = (
-        traduzir_categoria(
-            nome_original
-        )
+    nome_portugues = traduzir_categoria(
+        nome_original
     )
 
 
@@ -1091,10 +1038,7 @@ for _, linha in (
     ] = nome_portugues
 
 
-    if (
-        nome_portugues
-        not in mapa_categorias
-    ):
+    if nome_portugues not in mapa_categorias:
 
         mapa_categorias[
             nome_portugues
@@ -1105,87 +1049,30 @@ for _, linha in (
 # CONVERTER CATEGORIA ANTIGA EM INGLÊS
 # =========================================================
 
-if (
-    categoria_existente.upper()
-    != "TODAS"
-):
+if categoria_atual.upper() != "TODAS":
 
     traducao_existente = (
         mapa_original_para_portugues.get(
-            categoria_existente.lower()
+            categoria_atual.lower()
         )
     )
 
     if traducao_existente:
 
-        categoria_existente = (
+        categoria_atual = (
             traducao_existente
+        )
+
+        config.update(
+            range_name="B2",
+            values=[
+                [categoria_atual]
+            ]
         )
 
 
 # =========================================================
-# ORGANIZAR CONFIG
-# =========================================================
-
-config.update(
-    range_name="A1:B5",
-    values=[
-        [
-            "CONFIGURAÇÃO",
-            "VALOR"
-        ],
-        [
-            "Categoria",
-            categoria_existente
-        ],
-        [
-            "Palavra-chave",
-            palavra_existente
-        ],
-        [
-            "Marca",
-            marca_existente
-        ],
-        [
-            "Busca anterior",
-            busca_anterior_existente
-        ]
-    ]
-)
-
-
-# =========================================================
-# LER CONFIG
-# =========================================================
-
-categoria_atual = (
-    config.acell("B2").value
-    or "TODAS"
-).strip()
-
-palavra_chave = (
-    config.acell("B3").value
-    or ""
-).strip()
-
-marca = (
-    config.acell("B4").value
-    or ""
-).strip()
-
-busca_anterior = (
-    config.acell("B5").value
-    or ""
-).strip()
-
-
-if not categoria_atual:
-
-    categoria_atual = "TODAS"
-
-
-# =========================================================
-# LISTA DE CATEGORIAS EM PORTUGUÊS
+# LISTA DE CATEGORIAS
 # =========================================================
 
 categorias = sorted(
@@ -1193,7 +1080,8 @@ categorias = sorted(
 )
 
 
-# Limpa a lista antiga
+# A lista continua em A8 para manter
+# o menu suspenso que você já criou.
 if config.row_count >= 7:
 
     config.batch_clear([
@@ -1204,9 +1092,7 @@ if config.row_count >= 7:
 config.update(
     range_name="A7",
     values=[
-        [
-            "CATEGORIAS DISPONÍVEIS"
-        ]
+        ["CATEGORIAS DISPONÍVEIS"]
     ]
 )
 
@@ -1238,10 +1124,7 @@ config.update(
 categoria_id = None
 
 
-if (
-    categoria_atual.upper()
-    != "TODAS"
-):
+if categoria_atual.upper() != "TODAS":
 
     categoria_id = (
         mapa_categorias.get(
@@ -1259,26 +1142,32 @@ if (
 
 
 # =========================================================
-# ASSINATURA DA BUSCA
+# IDENTIFICAR A BUSCA
 # =========================================================
 
 assinatura_busca = (
     f"{categoria_atual.lower()}|"
     f"{palavra_chave.lower()}|"
-    f"{marca.lower()}"
+    f"{marca.lower()}|"
+    f"{COMISSAO_MINIMA}|"
+    f"{AVALIACAO_MINIMA}|"
+    f"{VENDAS_MINIMAS}|"
+    f"{DESCONTO_MINIMO}|"
+    f"{PRECO_MINIMO}|"
+    f"{PRECO_MAXIMO}|"
+    f"{QUANTIDADE_OFERTAS}"
 )
 
 
 # =========================================================
-# DETECTAR MUDANÇA DE BUSCA
+# SE ALTERAR BUSCA OU FILTROS, LIMPAR OFERTAS
 # =========================================================
 
 trocou_busca = (
     busca_anterior
     and
     assinatura_busca
-    !=
-    busca_anterior
+    != busca_anterior
 )
 
 
@@ -1291,7 +1180,7 @@ if trocou_busca:
         ])
 
     print(
-        "Critérios de busca alterados. "
+        "Busca ou filtros alterados. "
         "Ofertas anteriores removidas."
     )
 
@@ -1305,13 +1194,12 @@ config.update(
 
 
 # =========================================================
-# LER PRODUTOS EXISTENTES
+# PRODUTOS EXISTENTES
 # =========================================================
 
 dados_planilha = (
     aba.get_all_values()
 )
-
 
 produtos_existentes = {}
 
@@ -1333,13 +1221,8 @@ for numero_linha, linha in enumerate(
         produtos_existentes[
             item_id
         ] = {
-
-            "linha":
-                numero_linha,
-
-            "dados":
-                linha
-
+            "linha": numero_linha,
+            "dados": linha
         }
 
 
@@ -1354,10 +1237,8 @@ for item_id, existente in (
     produtos_existentes.items()
 ):
 
-    produto = (
-        buscar_produto_por_id(
-            item_id
-        )
+    produto = buscar_produto_por_id(
+        item_id
     )
 
     if not produto:
@@ -1370,15 +1251,9 @@ for item_id, existente in (
 
 
     preco_planilha = (
-
-        numero(
-            linha_antiga[3]
-        )
-
+        numero(linha_antiga[3])
         if len(linha_antiga) > 3
-
         else 0
-
     )
 
 
@@ -1389,36 +1264,22 @@ for item_id, existente in (
 
 
     link_afiliado = (
-
         linha_antiga[10].strip()
-
         if len(linha_antiga) > 10
-
         else ""
-
     )
 
 
     status_atual = (
-
         linha_antiga[12].strip()
-
         if len(linha_antiga) > 12
-
         else ""
-
     )
 
 
-    if (
-        status_atual.upper()
-        == "ENVIADO"
-    ):
-
+    if status_atual.upper() == "ENVIADO":
         status_final = "ENVIADO"
-
     else:
-
         status_final = "PRONTO"
 
 
@@ -1429,19 +1290,13 @@ for item_id, existente in (
 
     if link_estava_ausente:
 
-        link_afiliado = (
-            gerar_link_afiliado(
-                produto[
-                    "productLink"
-                ]
-            )
+        link_afiliado = gerar_link_afiliado(
+            produto["productLink"]
         )
 
 
     desconto = float(
-        produto.get(
-            "priceDiscountRate"
-        )
+        produto.get("priceDiscountRate")
         or 0
     )
 
@@ -1456,9 +1311,7 @@ for item_id, existente in (
 
     comissao_percentual = round(
         float(
-            produto.get(
-                "commissionRate"
-            )
+            produto.get("commissionRate")
             or 0
         ) * 100,
         2
@@ -1472,25 +1325,19 @@ for item_id, existente in (
     )
 
 
-    score = (
-        calcular_score(
-            produto
-        )
+    score = calcular_score(
+        produto
     )
 
 
-    image_url = (
-        produto.get(
-            "imageUrl",
-            ""
-        )
+    image_url = produto.get(
+        "imageUrl",
+        ""
     )
 
 
-    imagem = (
-        formula_imagem(
-            image_url
-        )
+    imagem = formula_imagem(
+        image_url
     )
 
 
@@ -1510,19 +1357,9 @@ for item_id, existente in (
 
 
     preco_mudou = (
-
-        round(
-            preco_planilha,
-            2
-        )
-
+        round(preco_planilha, 2)
         !=
-
-        round(
-            preco_api,
-            2
-        )
-
+        round(preco_api, 2)
     )
 
 
@@ -1537,7 +1374,6 @@ for item_id, existente in (
             link_afiliado
         )
 
-
         enviar_whatsapp = (
             formula_whatsapp(
                 legenda
@@ -1546,92 +1382,57 @@ for item_id, existente in (
 
 
         nova_linha = [[
-
-            str(
-                produto["itemId"]
-            ),
-
+            str(produto["itemId"]),
             "Shopee",
-
-            produto[
-                "productName"
-            ],
-
+            produto["productName"],
             preco_api,
-
             preco_anterior,
-
             desconto,
-
             float(
                 produto.get(
                     "ratingStar"
                 )
                 or 0
             ),
-
             int(
                 produto.get(
                     "sales"
                 )
                 or 0
             ),
-
             categoria_atual,
-
-            produto[
-                "productLink"
-            ],
-
+            produto["productLink"],
             link_afiliado,
-
             legenda,
-
             status_final,
-
             pd.Timestamp.now().strftime(
                 "%d/%m/%Y %H:%M"
             ),
-
             imagem,
-
             comissao_percentual,
-
             comissao_estimada,
-
             score,
-
             enviar_whatsapp,
-
             texto_status,
-
             abrir_imagem
-
         ]]
 
 
         atualizacoes.append({
-
             "range":
                 f"A{existente['linha']}:"
                 f"U{existente['linha']}",
-
             "values":
                 nova_linha
-
         })
 
 
     else:
 
         legenda_existente = (
-
             linha_antiga[11]
-
             if len(linha_antiga) > 11
-
             else ""
-
         )
 
 
@@ -1653,35 +1454,22 @@ for item_id, existente in (
 
 
         atualizacoes.append({
-
             "range":
                 f"O{existente['linha']}:"
                 f"U{existente['linha']}",
-
             "values": [[
-
                 imagem,
-
                 comissao_percentual,
-
                 comissao_estimada,
-
                 score,
-
                 enviar_whatsapp,
-
                 texto_status,
-
                 abrir_imagem
-
             ]]
-
         })
 
 
-    time.sleep(
-        0.15
-    )
+    time.sleep(0.15)
 
 
 if atualizacoes:
@@ -1694,13 +1482,12 @@ if atualizacoes:
 
 
 # =========================================================
-# BUSCAR E RANQUEAR OFERTAS
+# BUSCAR NOVAS OFERTAS
 # =========================================================
 
 ids_existentes = set(
     produtos_existentes.keys()
 )
-
 
 candidatos = []
 
@@ -1709,29 +1496,14 @@ pagina = 1
 MAX_PAGINAS = 10
 
 
-while (
-    pagina <= MAX_PAGINAS
-):
+while pagina <= MAX_PAGINAS:
 
-    resultado = (
-        buscar_produtos(
-
-            categoria_id=
-                categoria_id,
-
-            palavra_chave=
-                palavra_chave,
-
-            marca=
-                marca,
-
-            pagina=
-                pagina,
-
-            limite=
-                50
-
-        )
+    resultado = buscar_produtos(
+        categoria_id=categoria_id,
+        palavra_chave=palavra_chave,
+        marca=marca,
+        pagina=pagina,
+        limite=50
     )
 
 
@@ -1742,39 +1514,28 @@ while (
 
 
     if not produtos:
-
         break
 
 
     for produto in produtos:
 
         item_id = str(
-            produto.get(
-                "itemId"
-            )
+            produto.get("itemId")
         )
 
 
-        if (
-            item_id
-            in ids_existentes
-        ):
-
+        if item_id in ids_existentes:
             continue
 
 
         vendas = int(
-            produto.get(
-                "sales"
-            )
+            produto.get("sales")
             or 0
         )
 
 
         avaliacao = float(
-            produto.get(
-                "ratingStar"
-            )
+            produto.get("ratingStar")
             or 0
         )
 
@@ -1795,20 +1556,62 @@ while (
         )
 
 
-        # Comissão mínima 5%
-        if comissao < 0.05:
+        comissao_percentual = (
+            comissao * 100
+        )
+
+
+        preco_atual = float(
+            produto.get("priceMin")
+            or 0
+        )
+
+
+        # =================================================
+        # FILTROS CONTROLADOS PELA PLANILHA
+        # =================================================
+
+        if (
+            comissao_percentual
+            < COMISSAO_MINIMA
+        ):
             continue
 
-        # Avaliação mínima 4.8
-        if avaliacao < 4.8:
+
+        if (
+            avaliacao
+            < AVALIACAO_MINIMA
+        ):
             continue
 
-        # Mais de 500 vendas
-        if vendas <= 500:
+
+        if (
+            vendas
+            < VENDAS_MINIMAS
+        ):
             continue
 
-        # Desconto mínimo 10%
-        if desconto < 10:
+
+        if (
+            desconto
+            < DESCONTO_MINIMO
+        ):
+            continue
+
+
+        if (
+            PRECO_MINIMO > 0
+            and
+            preco_atual < PRECO_MINIMO
+        ):
+            continue
+
+
+        if (
+            PRECO_MAXIMO > 0
+            and
+            preco_atual > PRECO_MAXIMO
+        ):
             continue
 
 
@@ -1833,7 +1636,6 @@ while (
     if not page_info.get(
         "hasNextPage"
     ):
-
         break
 
 
@@ -1841,23 +1643,21 @@ while (
 
 
 # =========================================================
-# ORDENAR
+# RANKING
 # =========================================================
 
 candidatos = sorted(
-
     candidatos,
-
     key=lambda produto:
         produto["_score"],
-
     reverse=True
-
 )
 
 
 novas_ofertas = (
-    candidatos[:5]
+    candidatos[
+        :QUANTIDADE_OFERTAS
+    ]
 )
 
 
@@ -1871,9 +1671,7 @@ linhas_novas = []
 for produto in novas_ofertas:
 
     preco_atual = float(
-        produto.get(
-            "priceMin"
-        )
+        produto.get("priceMin")
         or 0
     )
 
@@ -1894,12 +1692,8 @@ for produto in novas_ofertas:
     )
 
 
-    link_afiliado = (
-        gerar_link_afiliado(
-            produto[
-                "productLink"
-            ]
-        )
+    link_afiliado = gerar_link_afiliado(
+        produto["productLink"]
     )
 
 
@@ -1909,11 +1703,9 @@ for produto in novas_ofertas:
     )
 
 
-    texto_status = (
-        gerar_texto_status(
-            produto,
-            link_afiliado
-        )
+    texto_status = gerar_texto_status(
+        produto,
+        link_afiliado
     )
 
 
@@ -1935,25 +1727,19 @@ for produto in novas_ofertas:
     )
 
 
-    score = (
-        calcular_score(
-            produto
-        )
+    score = calcular_score(
+        produto
     )
 
 
-    image_url = (
-        produto.get(
-            "imageUrl",
-            ""
-        )
+    image_url = produto.get(
+        "imageUrl",
+        ""
     )
 
 
-    imagem = (
-        formula_imagem(
-            image_url
-        )
+    imagem = formula_imagem(
+        image_url
     )
 
 
@@ -1972,73 +1758,43 @@ for produto in novas_ofertas:
 
 
     linhas_novas.append([
-
-        str(
-            produto["itemId"]
-        ),
-
+        str(produto["itemId"]),
         "Shopee",
-
-        produto[
-            "productName"
-        ],
-
+        produto["productName"],
         preco_atual,
-
         preco_anterior,
-
         desconto,
-
         float(
             produto.get(
                 "ratingStar"
             )
             or 0
         ),
-
         int(
             produto.get(
                 "sales"
             )
             or 0
         ),
-
         categoria_atual,
-
-        produto[
-            "productLink"
-        ],
-
+        produto["productLink"],
         link_afiliado,
-
         legenda,
-
         "PRONTO",
-
         pd.Timestamp.now().strftime(
             "%d/%m/%Y %H:%M"
         ),
-
         imagem,
-
         comissao_percentual,
-
         comissao_estimada,
-
         score,
-
         enviar_whatsapp,
-
         texto_status,
-
         abrir_imagem
-
     ])
 
 
-    time.sleep(
-        0.15
-    )
+    time.sleep(0.15)
 
 
 if linhas_novas:
@@ -2070,13 +1826,43 @@ print(
 )
 
 print(
-    f"Produtos analisados: "
-    f"{len(candidatos)}"
+    f"Comissão mínima: "
+    f"{COMISSAO_MINIMA}%"
 )
 
 print(
-    f"Produtos atualizados: "
-    f"{len(atualizacoes)}"
+    f"Avaliação mínima: "
+    f"{AVALIACAO_MINIMA}"
+)
+
+print(
+    f"Vendas mínimas: "
+    f"{VENDAS_MINIMAS}"
+)
+
+print(
+    f"Desconto mínimo: "
+    f"{DESCONTO_MINIMO}%"
+)
+
+print(
+    f"Preço mínimo: "
+    f"{PRECO_MINIMO}"
+)
+
+print(
+    f"Preço máximo: "
+    f"{PRECO_MAXIMO or 'Sem limite'}"
+)
+
+print(
+    f"Quantidade solicitada: "
+    f"{QUANTIDADE_OFERTAS}"
+)
+
+print(
+    f"Produtos aprovados nos filtros: "
+    f"{len(candidatos)}"
 )
 
 print(
