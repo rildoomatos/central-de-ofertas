@@ -86,6 +86,254 @@ aba.update(
 
 
 # =========================================================
+# TRADUÇÃO DAS CATEGORIAS
+# =========================================================
+
+TRADUCOES_CATEGORIAS = {
+
+    "women clothes":
+        "Roupas Femininas",
+
+    "women's clothes":
+        "Roupas Femininas",
+
+    "women apparel":
+        "Roupas Femininas",
+
+    "women's apparel":
+        "Roupas Femininas",
+
+    "men clothes":
+        "Roupas Masculinas",
+
+    "men's clothes":
+        "Roupas Masculinas",
+
+    "men apparel":
+        "Roupas Masculinas",
+
+    "men's apparel":
+        "Roupas Masculinas",
+
+    "women shoes":
+        "Calçados Femininos",
+
+    "women's shoes":
+        "Calçados Femininos",
+
+    "men shoes":
+        "Calçados Masculinos",
+
+    "men's shoes":
+        "Calçados Masculinos",
+
+    "women bags":
+        "Bolsas Femininas",
+
+    "women's bags":
+        "Bolsas Femininas",
+
+    "men bags":
+        "Bolsas Masculinas",
+
+    "men's bags":
+        "Bolsas Masculinas",
+
+    "fashion accessories":
+        "Acessórios de Moda",
+
+    "watches":
+        "Relógios",
+
+    "mobile & gadgets":
+        "Celulares e Acessórios",
+
+    "mobile and gadgets":
+        "Celulares e Acessórios",
+
+    "phones & accessories":
+        "Celulares e Acessórios",
+
+    "computers & accessories":
+        "Computadores e Acessórios",
+
+    "computers and accessories":
+        "Computadores e Acessórios",
+
+    "home appliances":
+        "Eletrodomésticos",
+
+    "home & living":
+        "Casa e Decoração",
+
+    "home and living":
+        "Casa e Decoração",
+
+    "home & garden":
+        "Casa e Jardim",
+
+    "home and garden":
+        "Casa e Jardim",
+
+    "kitchenware":
+        "Cozinha",
+
+    "beauty & personal care":
+        "Beleza e Cuidados Pessoais",
+
+    "beauty and personal care":
+        "Beleza e Cuidados Pessoais",
+
+    "beauty":
+        "Beleza",
+
+    "health":
+        "Saúde",
+
+    "health & personal care":
+        "Saúde e Cuidados Pessoais",
+
+    "mom & baby":
+        "Mamãe e Bebê",
+
+    "mom and baby":
+        "Mamãe e Bebê",
+
+    "babies & kids":
+        "Bebês e Crianças",
+
+    "babies and kids":
+        "Bebês e Crianças",
+
+    "baby & kids":
+        "Bebês e Crianças",
+
+    "toys":
+        "Brinquedos",
+
+    "toys & games":
+        "Brinquedos e Jogos",
+
+    "toys and games":
+        "Brinquedos e Jogos",
+
+    "sports & outdoors":
+        "Esportes e Lazer",
+
+    "sports and outdoors":
+        "Esportes e Lazer",
+
+    "sports":
+        "Esportes",
+
+    "hobbies & collections":
+        "Hobbies e Colecionáveis",
+
+    "hobbies and collections":
+        "Hobbies e Colecionáveis",
+
+    "gaming & consoles":
+        "Games e Consoles",
+
+    "gaming and consoles":
+        "Games e Consoles",
+
+    "games & consoles":
+        "Games e Consoles",
+
+    "cameras & drones":
+        "Câmeras e Drones",
+
+    "cameras and drones":
+        "Câmeras e Drones",
+
+    "audio":
+        "Áudio",
+
+    "food & beverages":
+        "Alimentos e Bebidas",
+
+    "food and beverages":
+        "Alimentos e Bebidas",
+
+    "groceries":
+        "Mercado",
+
+    "pets":
+        "Produtos para Pets",
+
+    "pet supplies":
+        "Produtos para Pets",
+
+    "automotive":
+        "Automotivo",
+
+    "automobiles":
+        "Automotivo",
+
+    "motorcycles":
+        "Motos",
+
+    "motorcycle":
+        "Motos",
+
+    "books & magazines":
+        "Livros e Revistas",
+
+    "books and magazines":
+        "Livros e Revistas",
+
+    "books":
+        "Livros",
+
+    "stationery":
+        "Papelaria",
+
+    "office & stationery":
+        "Escritório e Papelaria",
+
+    "office and stationery":
+        "Escritório e Papelaria",
+
+    "travel & luggage":
+        "Viagem e Bagagem",
+
+    "travel and luggage":
+        "Viagem e Bagagem",
+
+    "tickets & vouchers":
+        "Ingressos e Vouchers",
+
+    "tickets and vouchers":
+        "Ingressos e Vouchers",
+
+    "electronics":
+        "Eletrônicos",
+
+    "consumer electronics":
+        "Eletrônicos",
+
+    "tools & home improvement":
+        "Ferramentas e Construção",
+
+    "tools and home improvement":
+        "Ferramentas e Construção"
+}
+
+
+def traduzir_categoria(nome):
+
+    nome = str(nome).strip()
+
+    chave = nome.lower()
+
+    return TRADUCOES_CATEGORIAS.get(
+        chave,
+        nome
+    )
+
+
+# =========================================================
 # FUNÇÕES AUXILIARES
 # =========================================================
 
@@ -154,8 +402,7 @@ def calcular_preco_original(
         return preco_atual
 
     return round(
-        preco_atual
-        /
+        preco_atual /
         (1 - desconto / 100),
         2
     )
@@ -174,16 +421,12 @@ def calcular_score(produto):
     )
 
     desconto = float(
-        produto.get(
-            "priceDiscountRate"
-        )
+        produto.get("priceDiscountRate")
         or 0
     )
 
     comissao = float(
-        produto.get(
-            "commissionRate"
-        )
+        produto.get("commissionRate")
         or 0
     )
 
@@ -243,10 +486,6 @@ def calcular_comissao(produto):
     )
 
 
-# =========================================================
-# IMAGEM NA PLANILHA
-# =========================================================
-
 def formula_imagem(url):
 
     if not url:
@@ -259,10 +498,6 @@ def formula_imagem(url):
 
     return f'=IMAGE("{url}")'
 
-
-# =========================================================
-# BOTÃO ABRIR IMAGEM
-# =========================================================
 
 def formula_abrir_imagem(url):
 
@@ -278,10 +513,6 @@ def formula_abrir_imagem(url):
         f'=HYPERLINK("{url}";"ABRIR IMAGEM")'
     )
 
-
-# =========================================================
-# LINK PARA WHATSAPP
-# =========================================================
 
 def formula_whatsapp(legenda):
 
@@ -410,10 +641,6 @@ def buscar_produtos(
         )
 
 
-    # =====================================================
-    # TERMO DE BUSCA
-    # =====================================================
-
     termos = []
 
     if palavra_chave.strip():
@@ -445,14 +672,12 @@ def buscar_produtos(
             f"keyword:{termo_graphql}"
         )
 
-        # Com palavra-chave usamos relevância
         filtros.append(
             "sortType:1"
         )
 
     else:
 
-        # Sem palavra-chave buscamos pelos mais vendidos
         filtros.append(
             "sortType:2"
         )
@@ -583,7 +808,7 @@ def gerar_link_afiliado(
 
 
 # =========================================================
-# GERAR LEGENDA PARA GRUPO
+# LEGENDA WHATSAPP
 # =========================================================
 
 def gerar_legenda(
@@ -597,9 +822,7 @@ def gerar_legenda(
     )
 
     desconto = float(
-        produto.get(
-            "priceDiscountRate"
-        )
+        produto.get("priceDiscountRate")
         or 0
     )
 
@@ -647,7 +870,7 @@ def gerar_legenda(
 
 
 # =========================================================
-# GERAR TEXTO PARA STATUS
+# TEXTO STATUS
 # =========================================================
 
 def gerar_texto_status(
@@ -661,9 +884,7 @@ def gerar_texto_status(
     )
 
     desconto = float(
-        produto.get(
-            "priceDiscountRate"
-        )
+        produto.get("priceDiscountRate")
         or 0
     )
 
@@ -701,7 +922,7 @@ def gerar_texto_status(
 
 
 # =========================================================
-# CONFIG DA PLANILHA
+# CONFIG
 # =========================================================
 
 try:
@@ -720,8 +941,29 @@ except gspread.WorksheetNotFound:
 
 
 # =========================================================
-# MIGRAR CONFIG ANTIGA
+# PRESERVAR VALORES DA CONFIG
 # =========================================================
+
+rotulo_a2 = (
+    config.acell("A2").value
+    or ""
+).strip()
+
+rotulo_a3 = (
+    config.acell("A3").value
+    or ""
+).strip()
+
+rotulo_a4 = (
+    config.acell("A4").value
+    or ""
+).strip()
+
+rotulo_a5 = (
+    config.acell("A5").value
+    or ""
+).strip()
+
 
 categoria_existente = (
     config.acell("B2").value
@@ -729,107 +971,53 @@ categoria_existente = (
 ).strip()
 
 
-rotulo_antigo_a3 = (
-    config.acell("A3").value
-    or ""
-).strip()
+if (
+    rotulo_a3.lower()
+    == "palavra-chave"
+):
 
+    palavra_existente = (
+        config.acell("B3").value
+        or ""
+    ).strip()
 
-valor_antigo_b3 = (
-    config.acell("B3").value
-    or ""
-).strip()
+else:
 
+    palavra_existente = ""
 
-busca_anterior_existente = (
-    config.acell("B5").value
-    or ""
-).strip()
-
-
-# Se ainda estiver usando o formato antigo,
-# B3 era "Categoria anterior".
 
 if (
-    rotulo_antigo_a3.lower()
-    == "categoria anterior"
-    and
-    not busca_anterior_existente
+    rotulo_a4.lower()
+    == "marca"
+):
+
+    marca_existente = (
+        config.acell("B4").value
+        or ""
+    ).strip()
+
+else:
+
+    marca_existente = ""
+
+
+if (
+    rotulo_a5.lower()
+    == "busca anterior"
 ):
 
     busca_anterior_existente = (
-        valor_antigo_b3
-    )
+        config.acell("B5").value
+        or ""
+    ).strip()
+
+else:
+
+    busca_anterior_existente = ""
 
 
 # =========================================================
-# NOVO LAYOUT DA CONFIG
-# =========================================================
-
-config.update(
-    range_name="A1:B5",
-    values=[
-        [
-            "CONFIGURAÇÃO",
-            "VALOR"
-        ],
-        [
-            "Categoria",
-            categoria_existente
-        ],
-        [
-            "Palavra-chave",
-            ""
-        ],
-        [
-            "Marca",
-            ""
-        ],
-        [
-            "Busca anterior",
-            busca_anterior_existente
-        ]
-    ]
-)
-
-
-# =========================================================
-# LER CONFIGURAÇÕES
-# =========================================================
-
-categoria_atual = (
-    config.acell("B2").value
-    or "TODAS"
-).strip()
-
-
-palavra_chave = (
-    config.acell("B3").value
-    or ""
-).strip()
-
-
-marca = (
-    config.acell("B4").value
-    or ""
-).strip()
-
-
-busca_anterior = (
-    config.acell("B5").value
-    or ""
-).strip()
-
-
-# Categoria vazia equivale a TODAS
-
-if not categoria_atual:
-
-    categoria_atual = "TODAS"
-
-
-# =========================================================
-# FEED SOMENTE PARA CATEGORIAS
+# FEED PARA MAPEAR CATEGORIAS
 # =========================================================
 
 feed = requests.get(
@@ -866,14 +1054,20 @@ df_categorias = (
 )
 
 
+# =========================================================
+# MAPAS DE CATEGORIA
+# =========================================================
+
 mapa_categorias = {}
+
+mapa_original_para_portugues = {}
 
 
 for _, linha in (
     df_categorias.iterrows()
 ):
 
-    nome = str(
+    nome_original = str(
         linha[
             "global_category1"
         ]
@@ -885,21 +1079,127 @@ for _, linha in (
         ]
     )
 
-    if nome not in mapa_categorias:
+    nome_portugues = (
+        traduzir_categoria(
+            nome_original
+        )
+    )
+
+
+    mapa_original_para_portugues[
+        nome_original.lower()
+    ] = nome_portugues
+
+
+    if (
+        nome_portugues
+        not in mapa_categorias
+    ):
 
         mapa_categorias[
-            nome
+            nome_portugues
         ] = categoria_id_feed
 
+
+# =========================================================
+# CONVERTER CATEGORIA ANTIGA EM INGLÊS
+# =========================================================
+
+if (
+    categoria_existente.upper()
+    != "TODAS"
+):
+
+    traducao_existente = (
+        mapa_original_para_portugues.get(
+            categoria_existente.lower()
+        )
+    )
+
+    if traducao_existente:
+
+        categoria_existente = (
+            traducao_existente
+        )
+
+
+# =========================================================
+# ORGANIZAR CONFIG
+# =========================================================
+
+config.update(
+    range_name="A1:B5",
+    values=[
+        [
+            "CONFIGURAÇÃO",
+            "VALOR"
+        ],
+        [
+            "Categoria",
+            categoria_existente
+        ],
+        [
+            "Palavra-chave",
+            palavra_existente
+        ],
+        [
+            "Marca",
+            marca_existente
+        ],
+        [
+            "Busca anterior",
+            busca_anterior_existente
+        ]
+    ]
+)
+
+
+# =========================================================
+# LER CONFIG
+# =========================================================
+
+categoria_atual = (
+    config.acell("B2").value
+    or "TODAS"
+).strip()
+
+palavra_chave = (
+    config.acell("B3").value
+    or ""
+).strip()
+
+marca = (
+    config.acell("B4").value
+    or ""
+).strip()
+
+busca_anterior = (
+    config.acell("B5").value
+    or ""
+).strip()
+
+
+if not categoria_atual:
+
+    categoria_atual = "TODAS"
+
+
+# =========================================================
+# LISTA DE CATEGORIAS EM PORTUGUÊS
+# =========================================================
 
 categorias = sorted(
     mapa_categorias.keys()
 )
 
 
-# =========================================================
-# ATUALIZAR LISTA DE CATEGORIAS
-# =========================================================
+# Limpa a lista antiga
+if config.row_count >= 7:
+
+    config.batch_clear([
+        f"A7:B{config.row_count}"
+    ])
+
 
 config.update(
     range_name="A7",
@@ -911,19 +1211,24 @@ config.update(
 )
 
 
-if categorias:
+lista_config = [
+    ["TODAS"]
+]
 
-    config.update(
-        range_name=(
-            f"A8:"
-            f"A{7 + len(categorias)}"
-        ),
-        values=[
-            [categoria]
-            for categoria
-            in categorias
-        ]
-    )
+lista_config += [
+    [categoria]
+    for categoria
+    in categorias
+]
+
+
+config.update(
+    range_name=(
+        f"A8:"
+        f"A{7 + len(lista_config)}"
+    ),
+    values=lista_config
+)
 
 
 # =========================================================
@@ -954,7 +1259,7 @@ if (
 
 
 # =========================================================
-# IDENTIFICAR BUSCA ATUAL
+# ASSINATURA DA BUSCA
 # =========================================================
 
 assinatura_busca = (
@@ -965,7 +1270,7 @@ assinatura_busca = (
 
 
 # =========================================================
-# DETECTAR ALTERAÇÃO DA BUSCA
+# DETECTAR MUDANÇA DE BUSCA
 # =========================================================
 
 trocou_busca = (
@@ -1094,10 +1399,6 @@ for item_id, existente in (
     )
 
 
-    # =====================================================
-    # PRESERVAR STATUS
-    # =====================================================
-
     status_atual = (
 
         linha_antiga[12].strip()
@@ -1109,7 +1410,10 @@ for item_id, existente in (
     )
 
 
-    if status_atual.upper() == "ENVIADO":
+    if (
+        status_atual.upper()
+        == "ENVIADO"
+    ):
 
         status_final = "ENVIADO"
 
@@ -1222,10 +1526,6 @@ for item_id, existente in (
     )
 
 
-    # =====================================================
-    # PREÇO MUDOU OU LINK ESTAVA AUSENTE
-    # =====================================================
-
     if (
         preco_mudou
         or
@@ -1322,10 +1622,6 @@ for item_id, existente in (
         })
 
 
-    # =====================================================
-    # PREÇO NÃO MUDOU
-    # =====================================================
-
     else:
 
         legenda_existente = (
@@ -1398,7 +1694,7 @@ if atualizacoes:
 
 
 # =========================================================
-# BUSCAR E RANQUEAR AS MELHORES OFERTAS
+# BUSCAR E RANQUEAR OFERTAS
 # =========================================================
 
 ids_existentes = set(
@@ -1499,27 +1795,20 @@ while (
         )
 
 
-        # =================================================
-        # FILTROS
-        # =================================================
-
+        # Comissão mínima 5%
         if comissao < 0.05:
-
             continue
 
-
+        # Avaliação mínima 4.8
         if avaliacao < 4.8:
-
             continue
 
-
+        # Mais de 500 vendas
         if vendas <= 500:
-
             continue
 
-
+        # Desconto mínimo 10%
         if desconto < 10:
-
             continue
 
 
@@ -1552,7 +1841,7 @@ while (
 
 
 # =========================================================
-# ORDENAR PELA PONTUAÇÃO
+# ORDENAR
 # =========================================================
 
 candidatos = sorted(
@@ -1770,40 +2059,31 @@ print(
     f"{categoria_atual}"
 )
 
-
 print(
     f"Palavra-chave: "
     f"{palavra_chave or 'Nenhuma'}"
 )
-
 
 print(
     f"Marca: "
     f"{marca or 'Nenhuma'}"
 )
 
-
 print(
-    f"Produtos analisados "
-    f"para ranking: "
+    f"Produtos analisados: "
     f"{len(candidatos)}"
 )
-
 
 print(
     f"Produtos atualizados: "
     f"{len(atualizacoes)}"
 )
 
-
 print(
-    f"Novas ofertas "
-    f"adicionadas: "
+    f"Novas ofertas adicionadas: "
     f"{len(linhas_novas)}"
 )
 
-
 print(
-    "Automação concluída "
-    "com sucesso."
+    "Automação concluída com sucesso."
 )
